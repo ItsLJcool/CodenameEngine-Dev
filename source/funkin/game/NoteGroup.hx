@@ -65,9 +65,9 @@ class NoteGroup extends FlxTypedGroup<Note> {
 		}
 	}
 
-	public override function draw() {
-		@:privateAccess var oldDefaultCameras = FlxCamera._defaultCameras;
-		@:privateAccess if (cameras != null) FlxCamera._defaultCameras = cameras;
+	public override function draw() @:privateAccess {
+		var oldDefaultCameras = FlxCamera._defaultCameras;
+		if (_cameras != null) FlxCamera._defaultCameras = _cameras;
 
 		var oldCur = __currentlyLooping;
 		__currentlyLooping = true;
@@ -84,7 +84,7 @@ class NoteGroup extends FlxTypedGroup<Note> {
 		}
 		__currentlyLooping = oldCur;
 
-		@:privateAccess FlxCamera._defaultCameras = oldDefaultCameras;
+		FlxCamera._defaultCameras = oldDefaultCameras;
 	}
 
 	/**

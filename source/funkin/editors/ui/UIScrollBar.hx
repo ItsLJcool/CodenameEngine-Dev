@@ -24,7 +24,7 @@ class UIScrollBar extends UISprite {
 		this.length = length;
 
 		thumb = new UISliceSprite(0, 0, w, h, 'editors/ui/scrollbar');
-		thumb.cursor = BUTTON;
+		thumb.cursor = CLICK;
 		members.push(thumb);
 
 		thumbIcon = new FlxSprite(0, 0, Paths.image('editors/ui/scrollbar-icon'));
@@ -48,7 +48,7 @@ class UIScrollBar extends UISprite {
 		if (isScrolling) {
 			thumb.framesOffset = 18;
 			var mousePos = FlxG.mouse.getScreenPosition(__lastDrawCameras[0], FlxPoint.get());
-			var yPos = FlxMath.bound(FlxMath.remapToRange(mousePos.y, y, y+height, -(size/2), length + size), 0, length);
+			var yPos = CoolUtil.bound(FlxMath.remapToRange(mousePos.y, y, y+height, -(size/2), length + size), 0, length);
 			if (yPos >= 0 && yPos < length) {
 				value = yPos;
 				if (onChange != null)

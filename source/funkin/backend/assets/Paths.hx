@@ -32,37 +32,37 @@ class Paths
 	public static inline function ndll(key:String)
 		return getPath('ndlls/$key.ndll');
 
-	inline static public function file(file:String, ?library:String)
+	public static inline function file(file:String, ?library:String)
 		return getPath(file, library);
 
-	inline static public function txt(key:String, ?library:String)
+	public static inline function txt(key:String, ?library:String)
 		return getPath('data/$key.txt', library);
 
-	inline static public function pack(key:String, ?library:String)
+	public static inline function pack(key:String, ?library:String)
 		return getPath('data/$key.pack', library);
 
-	inline static public function ini(key:String, ?library:String)
+	public static inline function ini(key:String, ?library:String)
 		return getPath('data/$key.ini', library);
 
-	inline static public function fragShader(key:String, ?library:String)
+	public static inline function fragShader(key:String, ?library:String)
 		return getPath('shaders/$key.frag', library);
 
-	inline static public function vertShader(key:String, ?library:String)
+	public static inline function vertShader(key:String, ?library:String)
 		return getPath('shaders/$key.vert', library);
 
-	inline static public function xml(key:String, ?library:String)
+	public static inline function xml(key:String, ?library:String)
 		return getPath('data/$key.xml', library);
 
-	inline static public function json(key:String, ?library:String)
+	public static inline function json(key:String, ?library:String)
 		return getPath('data/$key.json', library);
 
-	inline static public function ps1(key:String, ?library:String)
+	public static inline function ps1(key:String, ?library:String)
 		return getPath('data/$key.ps1', library);
 
 	static public function sound(key:String, ?library:String, ?ext:String)
 		return getPath('sounds/$key.${ext != null ? ext : Flags.SOUND_EXT}', library);
 
-	inline static public function soundRandom(key:String, min:Int, max:Int, ?library:String)
+	public static inline function soundRandom(key:String, min:Int, max:Int, ?library:String)
 		return sound(key + FlxG.random.int(min, max), library);
 
 	inline static public function music(key:String, ?library:String, ?ext:String)
@@ -93,13 +93,12 @@ class Paths
 		return getPath('images/$key.$ext', library);
 	}
 
-	inline static public function script(key:String, ?library:String, isAssetsPath:Bool = false) {
+	public static inline function script(key:String, ?library:String, isAssetsPath:Bool = false) {
 		var scriptPath = isAssetsPath ? key : getPath(key, library);
 		if (!OpenFlAssets.exists(scriptPath)) {
 			var p:String;
 			for(ex in Script.scriptExtensions) {
-				p = '$scriptPath.$ex';
-				if (OpenFlAssets.exists(p)) {
+				if (OpenFlAssets.exists(p = scriptPath + '.' + ex)) {
 					scriptPath = p;
 					break;
 				}
@@ -115,8 +114,7 @@ class Paths
 		return getPath('songs/$song/charts/$difficulty.json', null);
 	}
 
-	inline static public function character(character:String):String
-	{
+	public static function character(character:String):String {
 		return getPath('data/characters/$character.xml', null);
 	}
 
@@ -124,33 +122,31 @@ class Paths
 	 * Gets the name of a registered font.
 	 * @param font The font's path (if it's already passed as a font name, the same name will be returned)
 	 */
-	inline static public function getFontName(font:String)
-	{
+	inline static public function getFontName(font:String) {
 		return OpenFlAssets.exists(font, FONT) ? OpenFlAssets.getFont(font).fontName : font;
 	}
 
-	inline static public function font(key:String)
-	{
+	public static inline function font(key:String) {
 		return getPath('fonts/$key');
 	}
 
-	inline static public function obj(key:String) {
+	public static inline function obj(key:String) {
 		return getPath('models/$key.obj');
 	}
 
-	inline static public function dae(key:String) {
+	public static inline function dae(key:String) {
 		return getPath('models/$key.dae');
 	}
 
-	inline static public function md2(key:String) {
+	public static inline function md2(key:String) {
 		return getPath('models/$key.md2');
 	}
 
-	inline static public function md5(key:String) {
+	public static inline function md5(key:String) {
 		return getPath('models/$key.md5');
 	}
 
-	inline static public function awd(key:String) {
+	public static inline function awd(key:String) {
 		return getPath('models/$key.awd');
 	}
 
@@ -259,7 +255,8 @@ class Paths
 			return null;
 		return graph.imageFrame;
 	}
-	static public function getFolderDirectories(key:String, addPath:Bool = false, source:AssetsLibraryList.AssetSource = BOTH):Array<String> {
+
+	public static function getFolderDirectories(key:String, addPath:Bool = false, source:AssetSource = BOTH):Array<String> {
 		if (!key.endsWith("/")) key += "/";
 		var content = assetsTree.getFolders('assets/$key', source);
 		if (addPath) {
@@ -268,7 +265,7 @@ class Paths
 		}
 		return content;
 	}
-	static public function getFolderContent(key:String, addPath:Bool = false, source:AssetsLibraryList.AssetSource = BOTH, noExtension:Bool = false):Array<String> {
+	static public function getFolderContent(key:String, addPath:Bool = false, source:AssetSource = BOTH, noExtension:Bool = false):Array<String> {
 		// designed to work both on windows and web
 		if (!key.endsWith("/")) key += "/";
 		var content = assetsTree.getFiles('assets/$key', source);

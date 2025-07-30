@@ -32,6 +32,15 @@ enum abstract XMLAnimType(Int)
 			default: def;
 		}
 	}
+
+	@:to public function toString():String {
+		return switch (cast this)
+		{
+			case NONE: "none";
+			case BEAT: "beat";
+			case LOOP: "loop";
+		}
+	}
 }
 
 class FunkinSprite extends FlxSkewedSprite implements IBeatReceiver implements IOffsetCompatible implements IXMLEvents
@@ -42,9 +51,10 @@ class FunkinSprite extends FlxSkewedSprite implements IBeatReceiver implements I
 	public var beatAnims:Array<BeatAnim> = [];
 	public var name:String;
 	public var zoomFactor:Float = 1;
-	public var initialZoom:Float = 1;
 	public var debugMode:Bool = false;
 	public var animDatas:Map<String, AnimData> = [];
+	public var animEnabled:Bool = true;
+	public var zoomFactorEnabled:Bool = true;
 
 	public var globalCurFrame(get, set):Int;
 
@@ -133,6 +143,7 @@ class FunkinSprite extends FlxSkewedSprite implements IBeatReceiver implements I
 		{
 			frames = Paths.getFrames(path, true);
 		}
+		return this;
 	}
 
 	public function onPropertySet(property:String, value:Dynamic) {
@@ -143,9 +154,9 @@ class FunkinSprite extends FlxSkewedSprite implements IBeatReceiver implements I
 	private var countedBeat = 0;
 	public function beatHit(curBeat:Int)
 	{
+		if(!animEnabled) return;
 		if (lastAnimContext != LOCK && beatAnims.length > 0 && (curBeat + beatOffset) % beatInterval == 0)
 		{
-			if(skipNegativeBeats && curBeat < 0) return;
 			// TODO: find a solution without countedBeat
 			var anim = beatAnims[FlxMath.wrap(countedBeat++, 0, beatAnims.length - 1)];
 			if (anim.name != null && anim.name != "null" && anim.name != "none")
@@ -159,49 +170,6 @@ class FunkinSprite extends FlxSkewedSprite implements IBeatReceiver implements I
 
 	public function measureHit(curMeasure:Int)
 	{
-	}
-
-	public override function getScreenBounds(?newRect:FlxRect, ?camera:FlxCamera):FlxRect
-	{
-		__doPreZoomScaleProcedure(camera);
-		var r = super.getScreenBounds(newRect, camera);
-		__doPostZoomScaleProcedure();
-		return r;
-	}
-
-	public override function drawComplex(camera:FlxCamera)
-	{
-		super.drawComplex(camera);
-	}
-
-	public override function doAdditionalMatrixStuff(matrix:FlxMatrix, camera:FlxCamera)
-	{
-		super.doAdditionalMatrixStuff(matrix, camera);
-		matrix.translate(-camera.width / 2, -camera.height / 2);
-
-		var requestedZoom = FlxMath.lerp(1, camera.zoom, zoomFactor);
-		var diff = requestedZoom / camera.zoom;
-		matrix.scale(diff, diff);
-		matrix.translate(camera.width / 2, camera.height / 2);
-	}
-
-	public override function getScreenPosition(?point:FlxPoint, ?Camera:FlxCamera):FlxPoint
-	{
-		if (__shouldDoScaleProcedure())
-		{
-			__oldScrollFactor.set(scrollFactor.x, scrollFactor.y);
-			var requestedZoom = FlxMath.lerp(initialZoom, camera.zoom, zoomFactor);
-			var diff = requestedZoom / camera.zoom;
-
-			scrollFactor.scale(1 / diff);
-
-			var r = super.getScreenPosition(point, Camera);
-
-			scrollFactor.set(__oldScrollFactor.x, __oldScrollFactor.y);
-
-			return r;
-		}
-		return super.getScreenPosition(point, Camera);
 	}
 
 	// ANIMATE ATLAS DRAWING
@@ -222,7 +190,7 @@ class FunkinSprite extends FlxSkewedSprite implements IBeatReceiver implements I
 	public function copyAtlasValues()
 	{
 		@:privateAccess {
-			animateAtlas.cameras = cameras;
+			animateAtlas.cameras = cameras; // investigate if we can use _cameras
 			animateAtlas.scrollFactor = scrollFactor;
 			animateAtlas.scale = scale;
 			animateAtlas.offset = offset;
@@ -261,33 +229,60 @@ class FunkinSprite extends FlxSkewedSprite implements IBeatReceiver implements I
 	}
 	#end
 
-	// SCALING FUNCS
-	#if REGION
-	private inline function __shouldDoScaleProcedure()
-		return zoomFactor != 1;
+	// ZOOM FACTOR
+	private inline function __shouldDoZoomFactor()
+		return zoomFactorEnabled && zoomFactor != 1;
 
-	static var __oldScrollFactor:FlxPoint = new FlxPoint();
-	static var __oldScale:FlxPoint = new FlxPoint();
-	var __skipZoomProcedure:Bool = false;
-
-	private function __doPreZoomScaleProcedure(camera:FlxCamera)
+	public override function getScreenBounds(?newRect:FlxRect, ?camera:FlxCamera):FlxRect
 	{
-		if (__skipZoomProcedure = !__shouldDoScaleProcedure())
-			return;
-		__oldScale.set(scale.x, scale.y);
-		var requestedZoom = FlxMath.lerp(initialZoom, camera.zoom, zoomFactor);
-		var diff = requestedZoom * camera.zoom;
+		if (camera == null)
+			camera = FlxG.camera;
 
-		scale.scale(diff);
+		var r = super.getScreenBounds(newRect, camera);
+
+		if(__shouldDoZoomFactor()) {
+			r.x -= camera.width / 2;
+			r.y -= camera.height / 2;
+
+			var ratio = (camera.zoom > 0 ? Math.max : Math.min)(0, FlxMath.lerp(1 / camera.zoom, 1, zoomFactor));
+			r.x *= ratio;
+			r.y *= ratio;
+			r.width *= ratio;
+			r.height *= ratio;
+
+			r.x += camera.width / 2;
+			r.y += camera.height / 2;
+		}
+		return r;
 	}
 
-	private function __doPostZoomScaleProcedure()
+	override public function isOnScreen(?camera:FlxCamera):Bool
 	{
-		if (__skipZoomProcedure)
-			return;
-		scale.set(__oldScale.x, __oldScale.y);
+		if (forceIsOnScreen)
+			return true;
+
+		if (camera == null)
+			camera = FlxG.camera;
+
+		var bounds = getScreenBounds(_rect, camera);
+		if (bounds.width == 0 && bounds.height == 0)
+			return false;
+		return camera.containsRect(bounds);
 	}
-	#end
+
+	// ZOOM FACTOR RENDERING
+	public override function doAdditionalMatrixStuff(matrix:FlxMatrix, camera:FlxCamera)
+	{
+		super.doAdditionalMatrixStuff(matrix, camera);
+		if(__shouldDoZoomFactor()) {
+			matrix.translate(-camera.width / 2, -camera.height / 2);
+
+			var requestedZoom = (camera.zoom >= 0 ? Math.max : Math.min)(FlxMath.lerp(1, camera.zoom, zoomFactor), 0);
+			var diff = requestedZoom / camera.zoom;
+			matrix.scale(diff, diff);
+			matrix.translate(camera.width / 2, camera.height / 2);
+		}
+	}
 
 	// OFFSETTING
 	#if REGION
@@ -411,6 +406,11 @@ class FunkinSprite extends FlxSkewedSprite implements IBeatReceiver implements I
 
 	public inline function isAnimAtEnd() {
 		return animateAtlas != null ? animateAtlas.anim.isAtEnd : (animation.curAnim != null ? animation.curAnim.isAtEnd : false);
+	}
+
+	override function updateAnimation(elapsed:Float) {
+		if (animEnabled)
+			super.updateAnimation(elapsed);
 	}
 
 	// Backwards compat (the names used to be all different and it sucked, please lets use the same format in the future)  - Nex

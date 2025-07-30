@@ -2,21 +2,26 @@ package commands;
 
 class Compiler {
 	public static function test(args:Array<String>) {
-		__build(args, ["test", getBuildTarget(), "-DTEST_BUILD"]);
+		__runLime(args, ["test", getBuildTarget(), "-DTEST_BUILD"]);
 	}
 	public static function build(args:Array<String>) {
-		__build(args, ["build", getBuildTarget(), "-DTEST_BUILD"]);
+		__runLime(args, ["build", getBuildTarget(), "-DTEST_BUILD"]);
 	}
 	public static function release(args:Array<String>) {
-		__build(args, ["build", getBuildTarget()]);
+		__runLime(args, ["build", getBuildTarget()]);
 	}
 	public static function testRelease(args:Array<String>) {
-		__build(args, ["test", getBuildTarget()]);
+		__runLime(args, ["test", getBuildTarget()]);
+	}
+	public static function run(args:Array<String>) {
+		__runLime(args, ["run", getBuildTarget()]);
 	}
 
-	private static function __build(args:Array<String>, arg:Array<String>) {
-		for (a in args) arg.push(a);
-		arg = ['run', 'lime'].concat(arg);
+	private static function __runLime(args:Array<String>, arg:Array<String>) {
+		arg.insert(0, "lime");
+		arg.insert(0, "run");
+		for(a in args)
+			arg.push(a);
 		Sys.command("haxelib", arg);
 	}
 

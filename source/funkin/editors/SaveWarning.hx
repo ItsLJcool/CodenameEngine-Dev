@@ -21,15 +21,15 @@ class SaveWarning {
 		if (warningFunc != null) warningFunc(closingWindow);
 
 		if (FlxG.state != null && FlxG.state is UIState) {
-			FlxG.state.openSubState(new UIWarningSubstate("Unsaved Changes!", "Your changes will be lost if you don't save them. (Can't be recovered)\n\n\nWould you like to Cancel?",
+			FlxG.state.openSubState(new UIWarningSubstate(TU.translate("saveWarning.warningTitle"), TU.translate("saveWarning.warningDesc"),
 			[
 				{
-					label: "Cancel",
+					label: TU.translate("saveWarning.cancel"),
 					color: 0x969533,
 					onClick: function (_) {if (closingWindow) WindowUtils.resetClosing();}
 				},
 				{
-					label: closingWindow ? "Exit Game" : "Exit To Menu",
+					label: closingWindow ? TU.translate("saveWarning.exitGame") : TU.translate("saveWarning.exitToMenu"),
 					color: 0x969533,
 					onClick: function(_) {
 						if (!closingWindow) {
@@ -42,7 +42,7 @@ class SaveWarning {
 					}
 				},
 				{
-					label: closingWindow ? "Save & Exit Game" : "Save & Exit To Menu",
+					label: closingWindow ? TU.translate("saveWarning.saveAndExitGame") : TU.translate("saveWarning.saveAndExitToMenu"),
 					color: 0x969533,
 					onClick: function(_) {
 						if (saveFunc != null) saveFunc();

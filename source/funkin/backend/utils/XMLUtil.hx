@@ -34,7 +34,7 @@ typedef TextFormat = { text:String, format:Dynamic }
  * Class made to make XML parsing easier.
  * Used in Stage.hx, Character.hx, and more.
  */
-class XMLUtil {
+final class XMLUtil {
 	/**
 	 * Applies a property XML node to an object.
 	 * The format for the XML is as follows:
@@ -67,7 +67,7 @@ class XMLUtil {
 	 */
 	public static function applyXMLProperty(object:Dynamic, property:Access):ErrorCode {
 		if (!property.has.name || !property.has.type || !property.has.value) {
-			Logs.trace('Failed to apply XML property: XML Element is missing name, type, or value attributes.', WARNING);
+			Logs.warn('Failed to apply XML property: XML Element is missing name, type, or value attributes.');
 			return MISSING_PROPERTY;
 		}
 
@@ -101,7 +101,7 @@ class XMLUtil {
 			if(isPath) {
 				str += ' (Path: ${property.att.name})';
 			}
-			Logs.trace(str, WARNING);
+			Logs.warn(str);
 			return REFLECT_ERROR;
 		}
 		return OK;
@@ -193,18 +193,23 @@ class XMLUtil {
 		if (node.has.updateHitbox && node.att.updateHitbox == "true") spr.updateHitbox();
 
 		if (node.has.zoomfactor)
-			spr.zoomFactor = Std.parseFloat(node.getAtt("zoomfactor")).getDefault(spr.zoomFactor);
+			spr.zoomFactor = Std.parseFloat(node.getAtt("zoomfactor")).getDefaultFloat(spr.zoomFactor);
 
 		if (node.has.alpha)
-			spr.alpha = Std.parseFloat(node.getAtt("alpha")).getDefault(spr.alpha);
+			spr.alpha = Std.parseFloat(node.getAtt("alpha")).getDefaultFloat(spr.alpha);
 
 		if(node.has.color)
 			spr.color = FlxColor.fromString(node.getAtt("color")).getDefault(0xFFFFFFFF);
+
+		if(node.has.angle)
+			spr.angle = Std.parseFloat(node.getAtt("angle")).getDefault(spr.angle);
 
 		if (node.has.playOnCountdown)
 			spr.skipNegativeBeats = node.att.playOnCountdown == "true";
 		if (node.has.beatInterval)
 			spr.beatInterval = Std.parseInt(node.att.beatInterval);
+		if (node.has.interval)
+			spr.beatInterval = Std.parseInt(node.att.interval);
 		if (node.has.beatOffset)
 			spr.beatOffset = Std.parseInt(node.att.beatOffset);
 
@@ -262,9 +267,9 @@ class XMLUtil {
 		if (anim.has.name) animData.name = anim.att.name;
 		if (anim.has.type) animData.animType = XMLAnimType.fromString(anim.att.type, animData.animType);
 		if (anim.has.anim) animData.anim = anim.att.anim;
-		if (anim.has.fps) animData.fps = Std.parseFloat(anim.att.fps).getDefault(animData.fps);
-		if (anim.has.x) animData.x = Std.parseFloat(anim.att.x).getDefault(animData.x);
-		if (anim.has.y) animData.y = Std.parseFloat(anim.att.y).getDefault(animData.y);
+		if (anim.has.fps) animData.fps = Std.parseFloat(anim.att.fps).getDefaultFloat(animData.fps);
+		if (anim.has.x) animData.x = Std.parseFloat(anim.att.x).getDefaultFloat(animData.x);
+		if (anim.has.y) animData.y = Std.parseFloat(anim.att.y).getDefaultFloat(animData.y);
 		if (anim.has.loop) animData.loop = anim.att.loop == "true";
 		if (anim.has.forced) animData.forced = anim.att.forced == "true";
 		if (anim.has.indices) animData.indices = CoolUtil.parseNumberRange(anim.att.indices);

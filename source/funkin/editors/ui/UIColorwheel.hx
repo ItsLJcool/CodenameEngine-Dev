@@ -69,10 +69,11 @@ class UIColorwheel extends UISliceSprite {
 			numStepper.antialiasing = true; numStepper.ID = i;
 			numStepper.onChange = (text:String) -> {
 				@:privateAccess numStepper.__onChange(text);
+				var val = Std.int(numStepper.value);
 				switch (numStepper.ID) {
-					default: curColor.red = Std.int(numStepper.value);
-					case 1: curColor.green = Std.int(numStepper.value);
-					case 2: curColor.blue = Std.int(numStepper.value);
+					default: curColor.red = val;
+					case 1: curColor.green = val;
+					case 2: curColor.blue = val;
 				}
 				hue = curColor.hue; saturation = curColor.saturation; brightness = curColor.brightness;
 				updateWheel();
@@ -125,28 +126,33 @@ class UIColorwheel extends UISliceSprite {
 	// Make the colorwheel feel better
 	static inline var hitBoxExtension:Float = 8;
 
+	// Skibidi
+	var selectedSprite = null;
 	public override function update(elapsed:Float) {
-		if (hovered && FlxG.mouse.pressed) {
-			var mousePos = FlxG.mouse.getScreenPosition(__lastDrawCameras[0], FlxPoint.get());
-
+		var mousePos = FlxG.mouse.getScreenPosition(__lastDrawCameras[0], FlxPoint.get());
+		if (hovered && FlxG.mouse.justPressed) {
 			for (sprite in [colorPicker, colorSlider]) {
 				var spritePos:FlxPoint = sprite.getScreenPosition(FlxPoint.get(), __lastDrawCameras[0]);
-
-				if (((mousePos.x > (spritePos.x - (hitBoxExtension/2))) && (mousePos.x < spritePos.x - (hitBoxExtension/2) + (sprite.width + hitBoxExtension))) && ((mousePos.y > (spritePos.y - (hitBoxExtension/2))) && (mousePos.y < spritePos.y - (hitBoxExtension/2) + (sprite.height + hitBoxExtension)))) {
-					mousePos -= FlxPoint.weak(spritePos.x, spritePos.y);
-					mousePos.set(FlxMath.bound(mousePos.x, 0, sprite.width), FlxMath.bound(mousePos.y, 0, sprite.height));
-
-					if (sprite == colorSlider) updateColorSliderMouse(mousePos);
-					if (sprite == colorPicker) updateColorPickerMouse(mousePos);
-					updateWheel();
-
-					spritePos.put();
+				if (FlxMath.inBounds(mousePos.x, spritePos.x - (hitBoxExtension/2), spritePos.x - (hitBoxExtension/2) + (sprite.width + hitBoxExtension)) && FlxMath.inBounds(mousePos.y, spritePos.y - (hitBoxExtension/2), spritePos.y - (hitBoxExtension/2) + (sprite.height + hitBoxExtension))) {
+					selectedSprite = sprite;
 					break;
 				}
 			}
-			mousePos.put();
 		}
 
+		if (selectedSprite != null) {
+			var spritePos:FlxPoint = selectedSprite.getScreenPosition(FlxPoint.get(), __lastDrawCameras[0]);
+			mousePos -= FlxPoint.weak(spritePos.x, spritePos.y);
+			mousePos.set(CoolUtil.bound(mousePos.x, 0, selectedSprite.width), CoolUtil.bound(mousePos.y, 0, selectedSprite.height));
+
+			if (selectedSprite == colorSlider) updateColorSliderMouse(mousePos);
+			if (selectedSprite == colorPicker) updateColorPickerMouse(mousePos);
+			updateWheel();
+			spritePos.put();
+
+			if (FlxG.mouse.justReleased) selectedSprite = null;
+		}
+		mousePos.put();
 		super.update(elapsed);
 	}
 }

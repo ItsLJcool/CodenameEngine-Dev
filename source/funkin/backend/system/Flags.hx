@@ -1,9 +1,11 @@
 package funkin.backend.system;
 
 import flixel.util.FlxColor;
+import funkin.backend.assets.ModsFolder;
 import funkin.backend.assets.IModsAssetLibrary;
 import funkin.backend.assets.ScriptedAssetLibrary;
 import funkin.backend.system.macros.GitCommitMacro;
+import funkin.backend.utils.IniUtil;
 import lime.app.Application;
 import lime.utils.AssetLibrary as LimeAssetLibrary;
 import lime.utils.AssetType;
@@ -13,7 +15,27 @@ import lime.utils.AssetType;
  */
 @:build(funkin.backend.system.macros.FlagMacro.build())
 class Flags {
+	// -- Codename's Addon Config --
+	@:bypass public static var addonFlags:Map<String, Dynamic> = [];
+
+	// -- Codename's Mod Config --
+	public static var MOD_NAME:String = "";
+	public static var MOD_DESCRIPTION:String = "";
+	public static var MOD_AUTHOR:String = "";
+	public static var MOD_API_VERSION:Int = 1;
+	public static var MOD_DOWNLOAD_LINK:String  = "";
+	public static var MOD_DEPENDENCIES:Array<String> = [];
+
+	@:noCompletion public static var MOD_ICON64:String = "";
+	@:noCompletion public static var MOD_ICON32:String = "";
+	@:noCompletion public static var MOD_ICON16:String = "";
+	public static var MOD_ICON:String = "";
+
+	public static var MOD_DISCORD_CLIENT_ID:String = "";
+	public static var MOD_DISCORD_LOGO_KEY:String = "";
+	public static var MOD_DISCORD_LOGO_TEXT:String = "";
 	// -- Codename's Default Flags --
+	public static var CURRENT_API_VERSION:Int = 1;
 	public static var COMMIT_NUMBER:Int = GitCommitMacro.commitNumber;
 	public static var COMMIT_HASH:String = GitCommitMacro.commitHash;
 	public static var COMMIT_MESSAGE:String = 'Commit $COMMIT_NUMBER ($COMMIT_HASH)';
@@ -53,6 +75,21 @@ class Flags {
 	public static var SONGS_LIST_MOD_MODE:Allow<"prepend", "override", "append"> = "override";
 	public static var WEEKS_LIST_MOD_MODE:Allow<"prepend", "override", "append"> = "override";
 
+	// Translations system //
+	public static var DEFAULT_LANGUAGE:String = "en";
+	public static var DEFAULT_LANGUAGE_NAME:String = "English";
+	/**
+	 * **NOTICE:** This will only contain the id of the language, not the full name.
+	 * If you blacklist the default language, you will need to change DEFAULT_LANGUAGE and DEFAULT_LANGUAGE_NAME.
+	 */
+	public static var BLACKLISTED_LANGUAGES:Array<String> = [];
+	/**
+	 * **NOTICE:** This will only contain the id of the language, not the full name.
+	 * If this list is not empty, the languages listed will be the only ones able to be used.
+	 */
+	public static var WHITELISTED_LANGUAGES:Array<String> = [];
+
+	// Internal stuff
 	public static var DEFAULT_BPM:Float = 100.0;
 	public static var DEFAULT_BEATS_PER_MEASURE:Int = 4;
 	public static var DEFAULT_STEPS_PER_BEAT:Int = 4;
@@ -90,12 +127,24 @@ class Flags {
 	public static var DEFAULT_GAMEOVER_LOSS_SFX:String = "gameOverSFX";
 	public static var DEFAULT_GAMEOVER_RETRY_SFX:String = "gameOverEnd";
 
-	public static var DEFAULT_CAM_ZOOM_INTERVAL:Int = 4;
+	public static var DEFAULT_CAM_ZOOM_INTERVAL:Int = 1;
+	public static var DEFAULT_CAM_ZOOM_OFFSET:Float = 0;
+	//public static var DEFAULT_CAM_ZOOM_EVERY:BeatType = MEASURE;
 	public static var DEFAULT_CAM_ZOOM_STRENGTH:Int = 1;
 	public static var DEFAULT_CAM_ZOOM:Float = 1.05; // what zoom level it defaults to
 	public static var DEFAULT_HUD_ZOOM:Float = 1.0;
 	public static var MAX_CAMERA_ZOOM_MULT:Float = 1.35;
 
+	// to translate these you need to convert them into ids
+	// Resume -> pause.resume
+	// Restart Song -> pause.restart
+	// Change Controls -> pause.changeControls
+	// Change Options -> pause.changeOptions
+	// Exit to menu -> pause.exitToMenu
+	// Exit to charter -> pause.exitToCharter
+	// Resume Cutscene -> pause.resumeCutscene
+	// Skip Cutscene -> pause.skipCutscene
+	// Restart Cutscene -> pause.restartCutscene
 	public static var DEFAULT_PAUSE_ITEMS:Array<String> = ['Resume', 'Restart Song', 'Change Controls', 'Change Options', 'Exit to menu', "Exit to charter"];
 	public static var DEFAULT_CUTSCENE_PAUSE_ITEMS:Array<String> = ['Resume Cutscene', 'Skip Cutscene', 'Restart Cutscene', 'Exit to menu'];
 	public static var DEFAULT_GITAROO:Bool = true;
@@ -134,7 +183,7 @@ class Flags {
 	public static var JSON_PRETTY_PRINT:String = "\t";
 
 	public static var DISABLE_EDITORS:Bool = false;
-	public static var DISABLE_BETA_WARNING_SCREEN:Bool = false;
+	public static var DISABLE_WARNING_SCREEN:Bool = true;
 	public static var DISABLE_TRANSITIONS:Bool = false;
 
 	@:also(funkin.backend.MusicBeatTransition.script)
@@ -148,6 +197,38 @@ class Flags {
 	public static var URL_EDITOR_FALLBACK:String = "https://www.youtube.com/watch?v=9Youam7GYdQ";
 	public static var URL_FNF_ITCH:String = "https://ninja-muffin24.itch.io/funkin";
 
+	/**
+	 * Default editor sound paths
+	 */
+	public static var DEFAULT_EDITOR_AUTOSAVE_SOUND = "editors/autosave";
+	public static var DEFAULT_EDITOR_BUTTONCLICK_SOUND = "editors/buttonClick";
+	public static var DEFAULT_EDITOR_CLICK_SOUND = "editors/click";
+	public static var DEFAULT_EDITOR_COPY_SOUND = "editors/copy";
+	public static var DEFAULT_EDITOR_CUT_SOUND = "editors/cut";
+	public static var DEFAULT_EDITOR_DELETE_SOUND = "editors/delete";
+	public static var DEFAULT_EDITOR_OFFSETDRAG_SOUND = "editors/offsetDrag";
+	public static var DEFAULT_EDITOR_PASTE_SOUND = "editors/paste";
+	public static var DEFAULT_EDITOR_REDO_SOUND = "editors/redo";
+	public static var DEFAULT_EDITOR_SAVE_SOUND = "editors/save";
+	public static var DEFAULT_EDITOR_TEXTREMOVE_SOUND = "editors/textRemove";
+	public static var DEFAULT_EDITOR_TEXTTYPE_SOUND = "editors/textType";
+	public static var DEFAULT_EDITOR_UNDO_SOUND = "editors/undo";
+	public static var DEFAULT_EDITOR_WINDOWAPPEAR_SOUND = "editors/windowAppear";
+	public static var DEFAULT_EDITOR_WINDOWCLOSE_SOUND = "editors/windowClose";
+	public static var DEFAULT_EDITOR_DROPDOWNAPPEAR_SOUND = "editors/dropdownAppear";
+	public static var DEFAULT_CHARTER_HITSOUND_SOUND = "editors/charter/hitsound";
+	public static var DEFAULT_CHARTER_METRONOME_SOUND = "editors/charter/metronome";
+	public static var DEFAULT_CHARTER_NOTEDELETE_SOUND = "editors/charter/noteDelete";
+	public static var DEFAULT_CHARTER_NOTEPLACE_SOUND = "editors/charter/notePlace";
+	public static var DEFAULT_CHARTER_SCROLL_SOUND = "editors/charter/scroll";
+	public static var DEFAULT_CHARTER_SNAPPINGCHANGE_SOUND = "editors/charter/snappingChange";
+	public static var DEFAULT_CHARTER_STRUMLOCK_SOUND = "editors/charter/strumLock";
+	public static var DEFAULT_CHARTER_STRUMUNLOCK_SOUND = "editors/charter/strumUnlock";
+	public static var DEFAULT_CHARTER_SUSTAINADD_SOUND = "editors/charter/sustainAdd";
+	public static var DEFAULT_CHARTER_SUSTAINDELETE_SOUND = "editors/charter/sustainDelete";
+	public static var DEFAULT_CHARACTER_GHOSTDISABLE_SOUND = "editors/character/ghostDisable";
+	public static var DEFAULT_CHARACTER_GHOSTENABLE_SOUND = "editors/character/ghostEnable";
+
 	public static var DEFAULT_GLSL_VERSION:String = "120";
 	@:also(funkin.backend.utils.HttpUtil.userAgent)
 	public static var USER_AGENT:String = 'request';
@@ -159,29 +240,9 @@ class Flags {
 	@:bypass public static var customFlags:Map<String, String> = [];
 
 	public static function loadFromData(flags:Map<String, String>, data:String) {
-		var trimmed:String;
-		var splitContent = [for(e in data.split("\n")) if ((trimmed = e.trim()) != "") trimmed];
+		var res = IniUtil.parseString(data);
 
-		for(line in splitContent) {
-			if(line.startsWith(";")) continue;
-			if(line.startsWith("#")) continue;
-			if(line.startsWith("//")) continue;
-			if(line.length == 0) continue;
-			if(line.charAt(0) == "[" && line.charAt(line.length-1) == "]") continue;
-
-			var index = line.indexOf("=");
-			if(index == -1) continue;
-			var name = line.substr(0, index).trim();
-			var value = line.substr(index+1).trim();
-
-			var wasQuoted = value.length > 1 && value.charCodeAt(0) == '"'.code && value.charCodeAt(value.length-1) == '"'.code;
-			if(wasQuoted) value = value.substr(1, value.length - 2);
-			if((!wasQuoted && value.length == 0) || name.length == 0)
-				continue;
-
-			if(!flags.exists(name))
-				flags[name] = value;
-		}
+		for (section in res) for (key => value in section) flags[key] = value;
 	}
 
 	public static function loadFromDatas(datas:Array<String>) {
@@ -205,16 +266,46 @@ class Flags {
 	 * Loads the flags from the assets.
 	**/
 	public static function load(?libs:Array<LimeAssetLibrary> = null) {
-		if (libs == null)
-			libs = Paths.assetsTree.libraries;
-		final flagsPath = Paths.getPath("flags.ini");
-		var datas:Array<String> = [
-			for(lib in libs)
-				if(lib.exists(flagsPath, AssetType.TEXT))
-					lib.getAsset(flagsPath, AssetType.TEXT)
-		];
+		if (libs == null) {
+			libs = Paths.assetsTree.libraries.copy();
+			libs.reverse();
+		}
+		for(lib in libs) {
+			var l = lib;
+			if (l is openfl.utils.AssetLibrary) {
+				@:privateAccess
+				l = cast(l, openfl.utils.AssetLibrary).__proxy;
+			}
+			if(lib is funkin.backend.assets.TranslatedAssetLibrary) {
+				// skip translations since it would be useless, if you wanna modify it set the flags inside of global.hx
+				continue;
+			}
 
-		var flags:Map<String, String> = loadFromDatas(datas);
-		parseFlags(flags);
+			if (l is IModsAssetLibrary) {
+				var flagsTxt = "";
+				if (l.exists(Paths.ini("config/modpack"), AssetType.TEXT))
+					flagsTxt = l.getAsset(Paths.ini("config/modpack"), AssetType.TEXT);
+				if (cast(l, IModsAssetLibrary).modName == "assets") continue;
+
+				if (cast(l, IModsAssetLibrary).modName == ModsFolder.currentModFolder) {
+					var flags:Map<String, String> = [];
+					loadFromData(flags, flagsTxt);
+					parseFlags(flags);
+				}
+				else {
+					var flags:Map<String, String> = [];
+					loadFromData(flags, flagsTxt);
+					addonFlags.set(cast(l, IModsAssetLibrary).modName.toLowerCase().replace(" ", "").trim(), flags);
+				}
+			}
+			else {
+				var flagsTxt = "";
+				if (l.exists(Paths.getPath("data/config/flags.ini"), AssetType.TEXT))
+					flagsTxt = l.getAsset(Paths.getPath("data/config/flags.ini"), AssetType.TEXT);
+				var flags:Map<String, String> = [];
+				loadFromData(flags, flagsTxt);
+				parseFlags(flags);
+			}
+		}
 	}
 }

@@ -14,7 +14,7 @@ import flixel.FlxG;
  * @see https://twitter.com/Ne_Eo_Twitch
  */
 @:access(away3d.core.managers.Stage3DManager)
-class Flx3DUtil
+final class Flx3DUtil
 {
 	#if THREE_D_SUPPORT
 	/**

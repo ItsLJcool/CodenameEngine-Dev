@@ -27,7 +27,7 @@ class Strum extends FlxSprite {
 	/**
 	 * The strum line that this strum belongs to.
 	**/
-	public var strumLine:StrumLine;
+	public var strumLine:StrumLine = null;
 
 	/**
 	 * The scroll speed of the notes.
@@ -68,7 +68,7 @@ class Strum extends FlxSprite {
 	public var getJustReleased:StrumLine->Bool = null;
 
 	@:dox(hide) public inline function __getPressed(strumLine:StrumLine):Bool {
-		return getPressed != null ? getPressed(strumLine) : switch(ID) {
+		return getPressed != null ? getPressed(strumLine) : strumLine.members.length != 4 ? ControlsUtil.getPressed(strumLine.controls, strumLine.members.length+"k"+ID) : switch(ID) {
 			case 0: strumLine.controls.NOTE_LEFT;
 			case 1: strumLine.controls.NOTE_DOWN;
 			case 2: strumLine.controls.NOTE_UP;
@@ -77,7 +77,7 @@ class Strum extends FlxSprite {
 		}
 	}
 	@:dox(hide) public inline function __getJustPressed(strumLine:StrumLine) {
-		return getJustPressed != null ? getJustPressed(strumLine) : switch(ID) {
+		return getJustPressed != null ? getJustPressed(strumLine) : strumLine.members.length != 4 ? ControlsUtil.getJustPressed(strumLine.controls, strumLine.members.length+"k"+ID) : switch(ID) {
 			case 0: strumLine.controls.NOTE_LEFT_P;
 			case 1: strumLine.controls.NOTE_DOWN_P;
 			case 2: strumLine.controls.NOTE_UP_P;
@@ -86,7 +86,7 @@ class Strum extends FlxSprite {
 		}
 	}
 	@:dox(hide) public inline function __getJustReleased(strumLine:StrumLine) {
-		return getJustReleased != null ? getJustReleased(strumLine) : switch(ID) {
+		return getJustReleased != null ? getJustReleased(strumLine) : strumLine.members.length != 4 ? ControlsUtil.getJustReleased(strumLine.controls, strumLine.members.length+"k"+ID) : switch(ID) {
 			case 0: strumLine.controls.NOTE_LEFT_R;
 			case 1: strumLine.controls.NOTE_DOWN_R;
 			case 2: strumLine.controls.NOTE_UP_R;
@@ -132,7 +132,7 @@ class Strum extends FlxSprite {
 		super.draw();
 	}
 
-	@:noCompletion public static final PIX180:Float = 565.4866776461628; // 180 * Math.PI
+	@:noCompletion public static inline final PIX180:Float = 565.4866776461628; // 180 * Math.PI
 	@:noCompletion public static final N_WIDTHDIV2:Float = Note.swagWidth / 2;
 
 	/**

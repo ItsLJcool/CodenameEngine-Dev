@@ -10,7 +10,7 @@ import openfl.Assets;
 using StringTools;
 
 class EventsData {
-	public static var defaultEventsList:Array<String> = ["HScript Call", "Camera Movement", "Camera Position", "Add Camera Zoom", "Camera Zoom", "Camera Modulo Change", "Camera Flash", "BPM Change", "Scroll Speed Change", "Alt Animation Toggle", "Play Animation"];
+	public static var defaultEventsList:Array<String> = ["HScript Call", "Camera Movement", "Camera Position", "Add Camera Zoom", "Camera Zoom", "Camera Modulo Change", "Camera Flash", "BPM Change", "Continuous BPM Change", "Time Signature Change", "Scroll Speed Change", "Alt Animation Toggle", "Play Animation"];
 	public static var defaultEventsParams:Map<String, Array<EventParamInfo>> = [
 		"HScript Call" => [
 			{name: "Function Name", type: TString, defValue: "myFunc"},
@@ -75,8 +75,10 @@ class EventsData {
 			{name: "Multiplicative?", type: TBool, defValue: true}
 		],
 		"Camera Modulo Change" => [
-			{name: "Modulo Interval (Beats)", type: TInt(1, 9999999, 1), defValue: 4},
-			{name: "Bump Strength", type: TFloat(0.1, 10, 0.01, 2), defValue: 1}
+			{name: "Modulo Interval", type: TInt(1, 9999999, 1), defValue: 4},
+			{name: "Bump Strength", type: TFloat(0.1, 10, 0.01, 2), defValue: 1},
+			{name: "Every Beat Type", type: TDropDown(['BEAT', 'MEASURE', 'STEP']), defValue: 'BEAT'},
+			{name: "Beat Offset", type: TFloat(-10, 10, 0.25, 2), defValue: 0}
 		],
 		"Camera Flash" => [
 			{name: "Reversed?", type: TBool, defValue: false},
@@ -84,7 +86,9 @@ class EventsData {
 			{name: "Time (Steps)", type: TFloat(0.25, 9999, 0.25, 2), defValue: 4},
 			{name: "Camera", type: TDropDown(['camGame', 'camHUD']), defValue: "camHUD"}
 		],
-		"BPM Change" => [{name: "Target BPM", type: TFloat(1.00, null, 0.001, 3), defValue: 100}],
+		"BPM Change" => [{name: "Target BPM", type: TFloat(1.00, 9999, 0.001, 3), defValue: 100}],
+		"Continuous BPM Change" => [{name: "Target BPM", type: TFloat(1.00, 9999, 0.001, 3), defValue: 100}, {name: "Time (steps)", type: TFloat(0.25, 9999, 0.25, 2), defValue: 4}],
+		"Time Signature Change" => [{name: "Target Numerator", type: TFloat(1), defValue: 4}, {name: "Target Denominator", type: TFloat(1), defValue: 4}, {name: "Denominator is Steps Per Beat", type: TBool, defValue: false}],
 		"Scroll Speed Change" => [
 			{name: "Tween Speed?", type: TBool, defValue: true},
 			{name: "New Speed", type: TFloat(0.01, 99, 0.01, 2), defValue: 1.},
@@ -192,7 +196,6 @@ typedef EventInfoFile = {
 
 typedef EventInfo = {
 	var params:Array<EventParamInfo>;
-	var paramValues:Array<Dynamic>;
 }
 
 typedef EventParamInfo = {

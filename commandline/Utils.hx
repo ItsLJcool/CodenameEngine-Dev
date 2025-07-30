@@ -17,11 +17,11 @@ class Utils {
 
         condition = condition.replace('&&', '&').replace('||', '|').replace(" ", "");
 
-        var stack:Array<Dynamic> = [];
+        final stack:Array<Dynamic> = [];
         var i = 0;
 
         while (i < condition.length) {
-            var char = condition.charAt(i);
+            final char = condition.charAt(i);
 
             switch (char) {
                 case '(':
@@ -32,7 +32,7 @@ class Utils {
                         if (condition.charAt(j) == '(') balance++;
                         if (condition.charAt(j) == ')') balance--;
                     }
-                    var subExpr = condition.substr(i + 1, j - i - 1);
+                    final subExpr = condition.substr(i + 1, j - i - 1);
                     stack.push(evaluateArgsCondition(subExpr, args));
                     i = j;
                 case '&', '|':
@@ -55,8 +55,8 @@ class Utils {
     public static function evaluate(stack:Array<Dynamic>):Bool {
         var result = stack.shift();
         while (stack.length > 0) {
-            var op = stack.shift();
-            var next = stack.shift();
+            final op = stack.shift();
+            final next = stack.shift();
             switch(op) {
                 case '&':
                     result = result && next;

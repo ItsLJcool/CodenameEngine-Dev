@@ -21,6 +21,7 @@ class StoryMenuState extends MusicBeatState {
 	public var weekList:StoryWeeklist;
 
 	// yes it supports parameters  - Nex
+	// To be removed later, when translation branch is merged into public - Neo
 	public var scoreMessage:String = "WEEK SCORE:{0}";
 
 	public var scoreText:FlxText;
@@ -58,7 +59,7 @@ class StoryMenuState extends MusicBeatState {
 		blackBar.color = 0xFF000000;
 		blackBar.updateHitbox();
 
-		scoreText = new FunkinText(10, 10, 0, "SCORE: -", 36);
+		scoreText = new FunkinText(10, 10, 0, TU.translate("story.score", ["-"]), 36);
 		scoreText.setFormat(Paths.font("vcr.ttf"), 32);
 
 		weekTitle = new FlxText(10, 10, FlxG.width - 20, "", 32);
@@ -89,7 +90,7 @@ class StoryMenuState extends MusicBeatState {
 		}
 		rightArrow.x -= rightArrow.width;
 
-		tracklist = new FunkinText(16, weekBG.y + weekBG.height + 44, Std.int(((FlxG.width - 400) / 2) - 80), "TRACKS", 32);
+		tracklist = new FunkinText(16, weekBG.y + weekBG.height + 44, Std.int(((FlxG.width - 400) / 2) - 80), TU.translate("story.tracks"), 32);
 		tracklist.alignment = CENTER;
 		tracklist.color = 0xFFE55777;
 
@@ -139,7 +140,7 @@ class StoryMenuState extends MusicBeatState {
 		super.update(elapsed);
 
 		lerpScore = lerp(lerpScore, intendedScore, 0.5);
-		scoreText.text = scoreMessage.replace("{0}", Std.string(Math.round(lerpScore)));
+		scoreText.text = TU.translate("story.score", [Math.round(lerpScore)]);
 
 		if (canSelect) {
 			if (leftArrow != null && leftArrow.exists) leftArrow.animation.play(controls.LEFT ? 'press' : 'idle');
@@ -188,7 +189,7 @@ class StoryMenuState extends MusicBeatState {
 			e.targetY = k - curWeek;
 			e.alpha = k == curWeek ? 1.0 : 0.6;
 		}
-		tracklist.text = 'TRACKS\n\n${[for(e in weeks[curWeek].songs) if (!e.hide) e.displayName.getDefault(e.name).toUpperCase()].join('\n')}';
+		tracklist.text = '${TU.translate("story.tracks")}\n\n${[for(e in weeks[curWeek].songs) if (!e.hide) e.displayName.getDefault(e.name).toUpperCase()].join('\n')}';
 		weekTitle.text = weeks[curWeek].name.getDefault("");
 
 		if (characterSprites != null) for (i in 0...3) {
@@ -340,7 +341,7 @@ class StoryWeeklist {
 
 	public function new() {}
 
-	public function getWeeksFromSource(source:funkin.backend.assets.AssetsLibraryList.AssetSource, useTxt:Bool = true, loadCharactersData:Bool = true) {
+	public function getWeeksFromSource(source:funkin.backend.assets.AssetSource, useTxt:Bool = true, loadCharactersData:Bool = true) {
 		var path:String = Paths.txt('weeks/weeks');
 		var weeksFound:Array<String> = useTxt && Paths.assetsTree.existsSpecific(path, "TEXT", source) ? CoolUtil.coolTextFile(path) :
 			[for (c in Paths.getFolderContent('data/weeks/weeks/', false, source)) if (Path.extension(c).toLowerCase() == "xml") Path.withoutExtension(c)];

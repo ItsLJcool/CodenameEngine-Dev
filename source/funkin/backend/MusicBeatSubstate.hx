@@ -122,7 +122,9 @@ class MusicBeatSubstate extends FlxSubState implements IBeatReceiver
 					script.load();
 				}
 			}
+			#if EXPERMENTAL_SCRIPT_RELOADING
 			else stateScripts.reload();
+			#end
 		}
 	}
 

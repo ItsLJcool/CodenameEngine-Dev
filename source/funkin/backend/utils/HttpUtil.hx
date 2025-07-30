@@ -2,7 +2,7 @@ package funkin.backend.utils;
 
 import haxe.Http;
 
-class HttpUtil
+final class HttpUtil
 {
 	public static var userAgent:String = Flags.USER_AGENT;
 	public static function requestText(url:String)
@@ -63,7 +63,7 @@ class HttpUtil
 		{
 			// 301: Moved Permanently, 302: Found (Moved Temporarily), 307: Temporary Redirect, 308: Permanent Redirect  - Nex
 			case 301 | 302 | 307 | 308:
-				Logs.traceColored([Logs.logText('[Connection Status] ', BLUE), Logs.logText('Redirected with status code: ', YELLOW), Logs.logText('$status', GREEN)], WARNING);
+				Logs.traceColored([Logs.logText('[Connection Status] ', BLUE), Logs.logText('Redirected with status code: ', YELLOW), Logs.logText('$status', GREEN)], VERBOSE);
 				return true;
 		}
 		return false;

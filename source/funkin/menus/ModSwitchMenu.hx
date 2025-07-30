@@ -34,7 +34,7 @@ class ModSwitchMenu extends MusicBeatSubstate {
 
 		alphabets = new FlxTypedGroup<Alphabet>();
 		for(mod in mods) {
-			var a = new Alphabet(0, 0, mod == null ? "DISABLE MODS" : mod, true);
+			var a = new Alphabet(0, 0, mod == null ? TU.translate("mods.disableMods") : mod, "bold");
 			if(mod == ModsFolder.currentModFolder)
 				a.color = FlxColor.LIME;
 			a.isMenuItem = true;

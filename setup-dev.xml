@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<libraries>
+<libraries checkVersion="false">
 	<print pretty="true">Setting up dev libs...</print>
 
 	<cmd>
@@ -91,6 +91,21 @@
 			<line>git clone https://github.com/FNF-CNE-Devs/away3d away3d</line>
 			<line>cd ..</line>
 			<line>haxelib dev away3d dev-libs/away3d</line>
+		</cmd>
+	</if>
+
+	<if cond="ne_eo">
+		<!-- Ignore this its only for Ne_Eo -->
+		<cmd>
+			<line>haxelib dev lime ../../lime</line>
+			<line>haxelib dev openfl ../../openfl</line>
+			<line>haxelib dev flixel ../../flixel</line>
+			<line>haxelib dev flixel-addons ../../flixel-addons</line>
+			<line>haxelib dev hscript-improved ../../hscript-improved</line>
+			<line>haxelib dev flxanimate ../../flxanimate</line>
+			<!-- <line>haxelib dev hxdiscord_rpc ../../hxdiscord_rpc</line> -->
+			<line>haxelib dev away3d ../../away3d</line>
+			<line>haxelib dev hxcpp ../../../hxcpp</line>
 		</cmd>
 	</if>
 

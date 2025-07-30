@@ -49,7 +49,8 @@ class Main {
 					"If you want a full build which contains all assets, run \"cne release\" or \"cne test-release\"",
 					"Additional arguments will be sent to the lime compiler.",
 					"",
-					"-debug : Builds a debug build."
+					"-debug : Builds a debug build.",
+					"-clean : Compiled files will be deleted before compiling."
 				].join("\n")
 			},
 			{
@@ -67,7 +68,20 @@ class Main {
 					"If you want a full build which contains all assets, run \"cne release\" or \"cne test-release\"",
 					"Additional arguments will be sent to the lime compiler.",
 					"",
-					"-debug : Builds a debug build."
+					"-debug : Builds a debug build.",
+					"-clean : Compiled files will be deleted before compiling."
+				].join("\n")
+			},
+			{
+				names: ["run"],
+				doc: "Runs the last build that was created.",
+				func: Compiler.run,
+				dDoc: [
+					"Usage: run <optional arguments>",
+					"",
+					"This will run the last build that was created.",
+					"If the last build was a debug build, you need to pass the -debug argument to run it.",
+					"Additional arguments will be sent to the lime compiler."
 				].join("\n")
 			},
 			{
@@ -79,7 +93,9 @@ class Main {
 					"",
 					"This will create and run a final ready-for-release build,",
 					"which means this build will be able to be release on websites such as GameBanana without worrying about source-dependant stuff.",
-					"Additional arguments will be sent to the lime compiler."
+					"Additional arguments will be sent to the lime compiler.",
+					"",
+					"-clean : Compiled files will be deleted before compiling."
 				].join("\n")
 			},
 			{
@@ -91,7 +107,9 @@ class Main {
 					"",
 					"This will create and run a final ready-for-release build,",
 					"which means this build will be able to be release on websites such as GameBanana without worrying about source-dependant stuff.",
-					"Additional arguments will be sent to the lime compiler."
+					"Additional arguments will be sent to the lime compiler.",
+					"",
+					"-clean : Compiled files will be deleted before compiling."
 				].join("\n")
 			},
 			{
@@ -113,7 +131,7 @@ class Main {
 
 	public static function main() {
 		initCommands();
-		var args = Sys.args();
+		final args = Sys.args();
 		var commandName = args.shift();
 		if (commandName != null)
 			commandName = commandName.toLowerCase();

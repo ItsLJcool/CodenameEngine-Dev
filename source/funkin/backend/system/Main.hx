@@ -1,5 +1,7 @@
 package funkin.backend.system;
 
+import sys.io.File;
+import sys.FileSystem;
 import flixel.addons.transition.FlxTransitionSprite.GraphicTransTileDiamond;
 import flixel.addons.transition.FlxTransitionableState;
 import flixel.addons.transition.TransitionData;
@@ -9,6 +11,7 @@ import flixel.math.FlxRect;
 import flixel.system.ui.FlxSoundTray;
 import funkin.backend.assets.AssetsLibraryList;
 import funkin.backend.assets.ModsFolder;
+import funkin.backend.assets.AssetSource;
 import funkin.backend.system.framerate.SystemInfo;
 import funkin.backend.system.modules.*;
 import funkin.editors.SaveWarning;
@@ -31,7 +34,7 @@ class Main extends Sprite
 	public static var instance:Main;
 
 	public static var modToLoad:String = null;
-	public static var forceGPUOnlyBitmapsOff:Bool = #if windows false #else true #end;
+	public static var forceGPUOnlyBitmapsOff:Bool = #if desktop false #else true #end;
 	public static var noTerminalColor:Bool = false;
 	public static var verbose:Bool = false;
 
@@ -58,6 +61,12 @@ class Main extends Sprite
 	#if ALLOW_MULTITHREADING
 	public static var gameThreads:Array<Thread> = [];
 	#end
+
+	public static function preInit() {
+		funkin.backend.utils.NativeAPI.registerAsDPICompatible();
+		funkin.backend.system.CommandLineHandler.parseCommandLine(Sys.args());
+		funkin.backend.system.Main.fixWorkingDirectory();
+	}
 
 	public function new()
 	{
@@ -130,16 +139,15 @@ class Main extends Sprite
 		#end
 
 		#if (sys && TEST_BUILD)
-			trace("Used cne test / cne build. Switching into source assets.");
+			Logs.infos("Used cne test / cne build. Switching into source assets.");
 			#if MOD_SUPPORT
 				ModsFolder.modsPath = './${pathBack}mods/';
 				ModsFolder.addonsPath = './${pathBack}addons/';
 			#end
-			Paths.assetsTree.__defaultLibraries.push(ModsFolder.loadLibraryFromFolder('assets', './${pathBack}assets/', true));
+			Paths.assetsTree.__defaultLibraries.push(ModsFolder.loadLibraryFromFolder('assets', './${pathBack}assets/', true, SOURCE));
 		#elseif USE_ADAPTED_ASSETS
-			Paths.assetsTree.__defaultLibraries.push(ModsFolder.loadLibraryFromFolder('assets', './assets/', true));
+			Paths.assetsTree.__defaultLibraries.push(ModsFolder.loadLibraryFromFolder('assets', './assets/', true, SOURCE));
 		#end
-
 
 		var lib = new AssetLibrary();
 		@:privateAccess
@@ -168,6 +176,9 @@ class Main extends Sprite
 
 		ModsFolder.init();
 		#if MOD_SUPPORT
+		if (FileSystem.exists("mods/autoload.txt"))
+			modToLoad = File.getContent("mods/autoload.txt").trim();
+
 		ModsFolder.switchMod(modToLoad.getDefault(Options.lastLoadedMod));
 		#end
 

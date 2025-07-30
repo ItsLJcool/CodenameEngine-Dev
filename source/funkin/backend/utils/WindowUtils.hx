@@ -2,7 +2,7 @@ package funkin.backend.utils;
 
 import openfl.Lib;
 
-class WindowUtils {
+final class WindowUtils {
 	public static var title(default, set):String;
 	private static function set_title(value:String):String {
 		title = value;
@@ -55,6 +55,17 @@ class WindowUtils {
 	public static inline function resetAffixes() {
 		prefix = suffix = "";
 		updateTitle();
+	}
+
+	/**
+	 * Sets the window title and icon.
+	 * @param title The title to set.
+	 * @param image The image to set as the icon.
+	**/
+	public static inline function setWindow(?name:String, ?image:String)
+	{
+		Lib.application.window.setIcon(lime.graphics.Image.fromBytes(Assets.getBytes(Flags.MOD_ICON != null ? Flags.MOD_ICON : image)));
+		title = Flags.MOD_NAME != null ? Flags.MOD_NAME : title;
 	}
 
 	/**

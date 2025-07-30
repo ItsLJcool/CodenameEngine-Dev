@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<libraries>
+<libraries checkVersion="false">
 	<if cond="time-fix">
 		<print pretty="true">Switching to branch 'time-fix'...</print>
 		<!-- <cmd inLib="lime" cmd="git checkout time-fix" /> -->

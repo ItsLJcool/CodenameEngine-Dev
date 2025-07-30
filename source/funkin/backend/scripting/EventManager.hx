@@ -3,7 +3,7 @@ package funkin.backend.scripting;
 import flixel.FlxState;
 import funkin.backend.scripting.events.*;
 
-class EventManager {
+final class EventManager {
 	// map doesn't work for that
 	public static var eventValues:Array<CancellableEvent> = [];
 	public static var eventKeys:Array<Class<CancellableEvent>> = [];

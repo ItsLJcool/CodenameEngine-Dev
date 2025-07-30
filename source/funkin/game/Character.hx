@@ -1,5 +1,8 @@
 package funkin.game;
 
+import sys.FileSystem;
+import flixel.util.FlxSpriteUtil;
+import openfl.display.Graphics;
 import flixel.util.typeLimit.OneOfTwo;
 import flixel.graphics.frames.FlxFrame;
 import flixel.math.FlxPoint;
@@ -17,6 +20,7 @@ import funkin.backend.scripting.events.DrawEvent;
 import funkin.backend.system.Conductor;
 import funkin.backend.system.interfaces.IBeatReceiver;
 import funkin.backend.system.interfaces.IOffsetCompatible;
+import funkin.backend.utils.MatrixUtil;
 import funkin.backend.utils.XMLUtil;
 import haxe.Exception;
 import haxe.io.Path;
@@ -28,7 +32,7 @@ using StringTools;
 @:allow(funkin.desktop.editors.CharacterEditor)
 @:allow(funkin.game.StrumLine)
 @:allow(funkin.game.PlayState)
-class Character extends FunkinSprite implements IBeatReceiver implements IOffsetCompatible {
+class Character extends FunkinSprite implements IBeatReceiver implements IOffsetCompatible implements IPrePostDraw {
 	public var isPlayer:Bool = false;
 	public var curCharacter:String = Flags.DEFAULT_CHARACTER;
 	public var sprite:String = Flags.DEFAULT_CHARACTER;
@@ -44,6 +48,7 @@ class Character extends FunkinSprite implements IBeatReceiver implements IOffset
 
 	public var cameraOffset:FlxPoint = FlxPoint.get(0, 0);
 	public var globalOffset:FlxPoint = FlxPoint.get(0, 0);
+	public var extraOffset:FlxPoint = FlxPoint.get(0, 0);
 
 	public var xml:Access;
 	public var scripts:ScriptPack;
@@ -76,16 +81,13 @@ class Character extends FunkinSprite implements IBeatReceiver implements IOffset
 
 		if(!disableScripts)
 			script = Script.create(Paths.script(Path.withoutExtension(Paths.xml('characters/$curCharacter')), null, true));
-		else
-			script = new DummyScript(curCharacter);
-		script.load();
-
-		buildCharacter(xml);
-		scripts.call("create");
-
 		if (script == null)
 			script = new DummyScript(curCharacter);
 
+		script.load();
+
+		scripts.call("create");
+		buildCharacter(xml);
 		scripts.call("postCreate");
 	}
 
@@ -101,9 +103,6 @@ class Character extends FunkinSprite implements IBeatReceiver implements IOffset
 		if (isPlayer != playerOffsets && switchAnims)
 			swapLeftRightAnimations();
 
-		var o:FlxPoint = getAnimOffset(getAnimName());
-		frameOffset.set(o.x, o.y);
-		o.put();
 		if (isPlayer) flipX = !flipX;
 		__baseFlipped = flipX;
 	}
@@ -173,13 +172,14 @@ class Character extends FunkinSprite implements IBeatReceiver implements IOffset
 	}
 
 	/**
-	 * Whenever the character should dance on beat or not. Set to false for `gf`, since the dance animation is automatically handled by PlayState.
+	 * Whenever the character should dance on beat or not.
 	 */
 	public var danceOnBeat:Bool = true;
 	public override function beatHit(curBeat:Int) {
 		scripts.call("beatHit", [curBeat]);
 
-		if (danceOnBeat && (curBeat + beatOffset) % beatInterval == 0 && !__lockAnimThisFrame)
+		if (skipNegativeBeats && curBeat < 0) return;
+		if (danceOnBeat && (curBeat + beatOffset) % (beatInterval * CoolUtil.maxInt(Math.floor(4 / Conductor.stepsPerBeat), 1)) == 0 && !__lockAnimThisFrame)
 			tryDance();
 	}
 
@@ -206,34 +206,51 @@ class Character extends FunkinSprite implements IBeatReceiver implements IOffset
 	}
 
 	public function isFlippedOffsets()
-		return (isPlayer != playerOffsets) != (flipX != __baseFlipped);
+		return debugMode ? false : (isPlayer != playerOffsets) != (flipX != __baseFlipped);
 
+	var __reversePreDrawProcedure:Bool = false;
+
+	public function preDraw() {
+		if (!ghostDraw) {
+			x += extraOffset.x;
+			y += extraOffset.y;
+		}
+
+		if (__reversePreDrawProcedure = isFlippedOffsets()) {
+			__reverseDrawProcedure = true;
+			flipX = !flipX;
+			scale.x *= -1;
+		}
+	}
+
+	public function postDraw() {
+		if (__reversePreDrawProcedure) {
+			flipX = !flipX;
+			scale.x *= -1;
+			__reverseDrawProcedure = false;
+		}
+
+		if (!ghostDraw) {
+			x -= extraOffset.x;
+			y -= extraOffset.y;
+		}
+	}
+
+	public var ghostDraw:Bool = false;
 	public override function draw() {
 		var e = EventManager.get(DrawEvent).recycle();
 		script.call("draw", [e]);
 
-		if(!e.cancelled) {
-			if (isFlippedOffsets()) {
-				__reverseDrawProcedure = true;
-				flipX = !flipX;
-				scale.x *= -1;
-
-				super.draw();
-
-				flipX = !flipX;
-				scale.x *= -1;
-				__reverseDrawProcedure = false;
-			} else super.draw();
-		}
+		preDraw();
+		super.draw();
+		postDraw();
 
 		script.call("postDraw", [e]);
 	}
 
 	public var singAnims = ["singLEFT", "singDOWN", "singUP", "singRIGHT"];
 	public inline function getSingAnim(direction:Int, suffix:String = ""):String
-	{
 		return singAnims[direction % singAnims.length] + suffix;
-	}
 
 	/**
 	 * Like `playSingAnimUnsafe` but checks if the character has the animation with the suffix part, otherwise it plays the animation without the suffix part.
@@ -287,6 +304,7 @@ class Character extends FunkinSprite implements IBeatReceiver implements IOffset
 
 		cameraOffset.put();
 		globalOffset.put();
+		extraOffset.put();
 	}
 
 	@:noCompletion var __reverseTrailProcedure:Bool = false;
@@ -342,12 +360,12 @@ class Character extends FunkinSprite implements IBeatReceiver implements IOffset
 		if (xml.x.exists("gameOverChar")) gameOverCharacter = xml.x.get("gameOverChar");
 		if (xml.x.exists("camx")) cameraOffset.x = Std.parseFloat(xml.x.get("camx"));
 		if (xml.x.exists("camy")) cameraOffset.y = Std.parseFloat(xml.x.get("camy"));
-		if (xml.x.exists("holdTime")) holdTime = CoolUtil.getDefault(Std.parseFloat(xml.x.get("holdTime")), 4);
+		if (xml.x.exists("holdTime")) holdTime = Std.parseFloat(xml.x.get("holdTime")).getDefaultFloat(4);
 		if (xml.x.exists("flipX")) flipX = (xml.x.get("flipX") == "true");
 		if (xml.x.exists("icon")) icon = xml.x.get("icon");
 		if (xml.x.exists("color")) iconColor = FlxColor.fromString(xml.x.get("color"));
 		if (xml.x.exists("scale")) {
-			var scale:Float = Std.parseFloat(xml.x.get("scale")).getDefault(1);
+			var scale:Float = Std.parseFloat(xml.x.get("scale")).getDefaultFloat(1);
 			this.scale.set(scale, scale);
 			updateHitbox();
 		}
@@ -409,17 +427,18 @@ class Character extends FunkinSprite implements IBeatReceiver implements IOffset
 
 		if (holdTime != 4) xml.set("holdTime", Std.string(FlxMath.roundDecimal(holdTime, 4)));
 
-		if (flipX) xml.set("flipX", Std.string(flipX));
-		xml.set("icon", getIcon());
+		var realFlipped:Bool = isPlayer ? !__baseFlipped : __baseFlipped;
+		if (realFlipped) xml.set("flipX", "true");
+		if (icon != curCharacter) xml.set("icon", getIcon());
 
 		if (gameOverCharacter != Character.FALLBACK_DEAD_CHARACTER) xml.set("gameOverChar", gameOverCharacter);
 		if (iconColor != null) xml.set("color", iconColor.toWebString());
 
-		xml.set("sprite", sprite);
+		if (sprite != curCharacter) xml.set("sprite", sprite);
 		if (scale.x != 1) xml.set("scale", Std.string(FlxMath.roundDecimal(scale.x, 4)));
 		if (!antialiasing) xml.set("antialiasing", antialiasing == true ? "true" : "false");
 
-		if (playerOffsets) xml.set("isPlayer", playerOffsets == true ? "true" : "false");
+		if (isPlayer) xml.set("isPlayer", isPlayer == true ? "true" : "false");
 
 		var anims:Array<AnimData> = [];
 		if (animsOrder != null) {
@@ -434,12 +453,12 @@ class Character extends FunkinSprite implements IBeatReceiver implements IOffset
 
 			animXml.set("name", anim.name);
 			animXml.set("anim", anim.anim);
-			animXml.set("loop", Std.string(anim.loop));
-			animXml.set("fps", Std.string(FlxMath.roundDecimal(anim.fps, 2)));
+			if (anim.loop) animXml.set("loop", Std.string(anim.loop));
+			if (FlxMath.roundDecimal(anim.fps, 2) != 24) animXml.set("fps", Std.string(FlxMath.roundDecimal(anim.fps, 2)));
 
 			var offset:FlxPoint = getAnimOffset(anim.name);
-			animXml.set("x", Std.string(FlxMath.roundDecimal(offset.x, 2)));
-			animXml.set("y", Std.string(FlxMath.roundDecimal(offset.y, 2)));
+			if (FlxMath.roundDecimal(offset.x, 2) != 0) animXml.set("x", Std.string(FlxMath.roundDecimal(offset.x, 2)));
+			if (FlxMath.roundDecimal(offset.y, 2) != 0) animXml.set("y", Std.string(FlxMath.roundDecimal(offset.y, 2)));
 			offset.putWeak();
 
 			if (anim.indices.length > 0)
@@ -455,6 +474,7 @@ class Character extends FunkinSprite implements IBeatReceiver implements IOffset
 			}
 
 		this.xml = new Access(xml);
+
 		return xml;
 	}
 

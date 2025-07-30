@@ -175,7 +175,7 @@ class TitleState extends MusicBeatState
 		for (i=>text in textArray)
 		{
 			if (text == "" || text == null) continue;
-			var money:Alphabet = new Alphabet(0, (i * 60) + 200, text, true, false);
+			var money:Alphabet = new Alphabet(0, (i * 60) + 200, text, "bold");
 			money.screenCenter(X);
 			textGroup.add(money);
 		}
@@ -183,7 +183,7 @@ class TitleState extends MusicBeatState
 
 	public function addMoreText(text:String)
 	{
-		var coolText:Alphabet = new Alphabet(0, (textGroup.length * 60) + 200, text, true, false);
+		var coolText:Alphabet = new Alphabet(0, (textGroup.length * 60) + 200, text, "bold");
 		coolText.screenCenter(X);
 		textGroup.add(coolText);
 	}
@@ -284,7 +284,7 @@ class TitleState extends MusicBeatState
 				}
 			}
 		} catch(e) {
-			Logs.trace('Failed to load titlescreen XML: $e', ERROR);
+			Logs.error('Failed to load titlescreen XML: $e');
 		}
 	}
 

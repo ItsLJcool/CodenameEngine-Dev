@@ -27,7 +27,7 @@ class SongCreationScreen extends UISubstateWindow {
 	public var songNameTextBox:UITextBox;
 	public var bpmStepper:UINumericStepper;
 	public var beatsPerMeasureStepper:UINumericStepper;
-	public var stepsPerBeatStepper :UINumericStepper;
+	public var denominatorStepper:UINumericStepper;
 	public var instExplorer:UIFileExplorer;
 	public var voicesExplorer:UIFileExplorer;
 	public var importFrom:UIButton;
@@ -76,8 +76,14 @@ class SongCreationScreen extends UISubstateWindow {
 		if (onSave != null) this.onSave = onSave;
 	}
 
+	inline function translate(id:String):String
+		return TU.translate("songCreationScreen." + id);
+
+	inline function translateMeta(id:String):String
+		return TU.translate("charterMetaDataScreen." + id);
+
 	public override function create() {
-		winTitle = "Creating New Song";
+		winTitle = translate("win-title");
 
 		winWidth = 748 - 32 + 40;
 		winHeight = 520;
@@ -85,51 +91,59 @@ class SongCreationScreen extends UISubstateWindow {
 		super.create();
 
 		function addLabelOn(ui:UISprite, text:String):UIText {
-			var text:UIText = new UIText(ui.x, ui.y - 24, 0, text);
-			ui.members.push(text);
-			return text;
+			var label:UIText = new UIText(ui.x, ui.y - 24, 0, text);
+			ui.members.push(label);
+			return label;
 		}
 
 		var songTitle:UIText;
-		songDataGroup.add(songTitle = new UIText(windowSpr.x + 20, windowSpr.y + 30 + 16, 0, "Song Info", 28));
+		songDataGroup.add(songTitle = new UIText(windowSpr.x + 20, windowSpr.y + 30 + 16, 0, translate("title"), 28));
 
-		songNameTextBox = new UITextBox(songTitle.x, songTitle.y + songTitle.height + 36, "Song Name");
+		songNameTextBox = new UITextBox(songTitle.x, songTitle.y + songTitle.height + 36, translateMeta("songName"));
 		songDataGroup.add(songNameTextBox);
-		addLabelOn(songNameTextBox, "Song Name");
+		addLabelOn(songNameTextBox, translateMeta("songName"));
 
 		bpmStepper = new UINumericStepper(songNameTextBox.x + 320 + 26, songNameTextBox.y, 100, 1, 2, 1, null, 90);
 		songDataGroup.add(bpmStepper);
-		addLabelOn(bpmStepper, "BPM");
+		addLabelOn(bpmStepper, translateMeta("bpm"));
 
 		beatsPerMeasureStepper = new UINumericStepper(bpmStepper.x + 60 + 26, bpmStepper.y, 4, 1, 0, 1, null, 54);
 		songDataGroup.add(beatsPerMeasureStepper);
-		addLabelOn(beatsPerMeasureStepper, "Time Signature");
+		addLabelOn(beatsPerMeasureStepper, translateMeta("timeSignature"));
 
 		songDataGroup.add(new UIText(beatsPerMeasureStepper.x + 30, beatsPerMeasureStepper.y + 3, 0, "/", 22));
 
-		stepsPerBeatStepper = new UINumericStepper(beatsPerMeasureStepper.x + 30 + 24, beatsPerMeasureStepper.y, 4, 1, 0, 1, null, 54);
-		songDataGroup.add(stepsPerBeatStepper);
+		denominatorStepper = new UINumericStepper(beatsPerMeasureStepper.x + 30 + 24, beatsPerMeasureStepper.y, 4, 1, 0, 1, null, 54);
+		songDataGroup.add(denominatorStepper);
 
-		instExplorer = new UIFileExplorer(songNameTextBox.x, songNameTextBox.y + 32 + 36, null, null, Flags.SOUND_EXT, function (res) {
+		instExplorer = new UIFileExplorer(songNameTextBox.x, songNameTextBox.y + 32 + 36, null, null, Flags.SOUND_EXT, function (path, res) {
+			if (path == null || res == null) return;
 			var audioPlayer:UIAudioPlayer = new UIAudioPlayer(instExplorer.x + 8, instExplorer.y + 8, res);
 			instExplorer.members.push(audioPlayer);
 			instExplorer.uiElement = audioPlayer;
 		});
 		songDataGroup.add(instExplorer);
-		addLabelOn(instExplorer, "Inst Audio File").applyMarkup(
-			"Inst Audio File $* Required$",
+		addLabelOn(instExplorer, "").applyMarkup(
+			translate("instAudio"),
 			[new FlxTextFormatMarkerPair(new FlxTextFormat(0xFFAD1212), "$")]);
 
-		voicesExplorer = new UIFileExplorer(instExplorer.x + 320 + 26, instExplorer.y, null, null, Flags.SOUND_EXT, function (res) {
+		voicesExplorer = new UIFileExplorer(instExplorer.x + 320 + 26, instExplorer.y, null, null, Flags.SOUND_EXT, function (path, res) {
+			if (path == null || res == null) return;
 			var audioPlayer:UIAudioPlayer = new UIAudioPlayer(voicesExplorer.x + 8, voicesExplorer.y + 8, res);
 			voicesExplorer.members.push(audioPlayer);
 			voicesExplorer.uiElement = audioPlayer;
 		});
 		songDataGroup.add(voicesExplorer);
-		addLabelOn(voicesExplorer, "Vocal Audio File");
 
-		importFrom = new UIButton(windowSpr.x + 20, windowSpr.y + windowSpr.bHeight - 16 - 32, "Import From...", function() {
-			winTitle = "Importing Song";
+		/*voicesUIText = addLabelOn(voicesExplorer, "");
+		voicesUIText.applyMarkup(
+			translate("voicesAudio"),
+			[new FlxTextFormatMarkerPair(new FlxTextFormat(0xFFAD1212), "$")]);*/
+
+		addLabelOn(voicesExplorer, translate("voicesAudio"));
+
+		importFrom = new UIButton(windowSpr.x + 20, windowSpr.y + windowSpr.bHeight - 16 - 32, translate("importFrom"), function() {
+			winTitle = translate("win-title-importing");
 			isImporting = true;
 			updatePagesTexts();
 			refreshPages();
@@ -137,46 +151,46 @@ class SongCreationScreen extends UISubstateWindow {
 		songDataGroup.add(importFrom);
 
 		var menuTitle:UIText;
-		menuDataGroup.add(menuTitle = new UIText(windowSpr.x + 20, windowSpr.y + 30 + 16, 0, "Menus Data (Freeplay/Story)", 28));
+		menuDataGroup.add(menuTitle = new UIText(windowSpr.x + 20, windowSpr.y + 30 + 16, 0, translateMeta("menusData"), 28));
 
-		displayNameTextBox = new UITextBox(menuTitle.x, menuTitle.y + menuTitle.height + 36, "Display Name");
+		displayNameTextBox = new UITextBox(menuTitle.x, menuTitle.y + menuTitle.height + 36, translateMeta("displayName"));
 		menuDataGroup.add(displayNameTextBox);
-		addLabelOn(displayNameTextBox, "Display Name");
+		addLabelOn(displayNameTextBox, translateMeta("displayName"));
 
-		iconTextBox = new UITextBox(displayNameTextBox.x + 320 + 26, displayNameTextBox.y, "Icon", 150);
+		iconTextBox = new UITextBox(displayNameTextBox.x + 320 + 26, displayNameTextBox.y, "face", 150);
 		iconTextBox.onChange = (newIcon:String) -> {updateIcon(newIcon);}
 		menuDataGroup.add(iconTextBox);
-		addLabelOn(iconTextBox, "Icon");
+		addLabelOn(iconTextBox, translateMeta("icon"));
 
-		updateIcon("Icon");
+		updateIcon("face");
 
-		opponentModeCheckbox = new UICheckbox(displayNameTextBox.x, iconTextBox.y + 10 + 32 + 26, "Opponent Mode", true);
+		opponentModeCheckbox = new UICheckbox(displayNameTextBox.x, iconTextBox.y + 10 + 32 + 26, translateMeta("opponentMode"), true);
 		menuDataGroup.add(opponentModeCheckbox);
-		addLabelOn(opponentModeCheckbox, "Modes Allowed");
+		addLabelOn(opponentModeCheckbox, translateMeta("modesAllowed"));
 
-		coopAllowedCheckbox = new UICheckbox(opponentModeCheckbox.x + 150 + 26, opponentModeCheckbox.y, "Co-op Mode", true);
+		coopAllowedCheckbox = new UICheckbox(opponentModeCheckbox.x + 150 + 26, opponentModeCheckbox.y, translateMeta("coopAllowed"), true);
 		menuDataGroup.add(coopAllowedCheckbox);
 
 		colorWheel = new UIColorwheel(iconTextBox.x, coopAllowedCheckbox.y, 0xFFFFFF);
 		menuDataGroup.add(colorWheel);
-		addLabelOn(colorWheel, "Color");
+		addLabelOn(colorWheel, translateMeta("color"));
 
 		difficultiesTextBox = new UITextBox(opponentModeCheckbox.x, opponentModeCheckbox.y + 6 + 32 + 26, "");
 		menuDataGroup.add(difficultiesTextBox);
-		addLabelOn(difficultiesTextBox, "Difficulties");
+		addLabelOn(difficultiesTextBox, translateMeta("difficulties"));
 
 		for (checkbox in [opponentModeCheckbox, coopAllowedCheckbox])
 			{checkbox.y += 6; checkbox.x += 4;}
 
 		var menuTitle:UIText;
-		selectFormatGroup.add(menuTitle = new UIText(windowSpr.x + 20, windowSpr.y + 30 + 16, 0, "Import From:", 28));
+		selectFormatGroup.add(menuTitle = new UIText(windowSpr.x + 20, windowSpr.y + 30 + 16, 0, translate("importSource"), 28));
 
-		engineDropdown = new UIDropDown(menuTitle.x, menuTitle.y + menuTitle.height + 36, 480, 32, ["Psych/Legacy FNF", "V-Slice", "V-Slice Project (.fnfc)"], 0, ["Supports runtime"]);
+		engineDropdown = new UIDropDown(menuTitle.x, menuTitle.y + menuTitle.height + 36, 480, 32, [translate("legacyOrPsych"), translate("vslice"), translate("vsliceProject")]);
 		selectFormatGroup.add(engineDropdown);
-		addLabelOn(engineDropdown, "Chart Format");
+		addLabelOn(engineDropdown, translate("importChartFormat"));
 
-		createSong = new UIButton(windowSpr.x + 20, windowSpr.y + windowSpr.bHeight - 16 - 32, "< Back", function() {
-			winTitle = "Creating New Song";
+		createSong = new UIButton(windowSpr.x + 20, windowSpr.y + windowSpr.bHeight - 16 - 32, "< " + translate("back"), function() {
+			winTitle = translate("win-title");
 			isImporting = false;
 			updatePagesTexts();
 			refreshPages();
@@ -184,47 +198,49 @@ class SongCreationScreen extends UISubstateWindow {
 		selectFormatGroup.add(createSong);
 
 		var menuTitle:UIText;
-		importAudioGroup.add(menuTitle = new UIText(windowSpr.x + 20, windowSpr.y + 30 + 16, 0, "Add Audios", 28));
+		importAudioGroup.add(menuTitle = new UIText(windowSpr.x + 20, windowSpr.y + 30 + 16, 0, translate("importAudios"), 28));
 
-		importInstExplorer = new UIFileExplorer(menuTitle.x, menuTitle.y + menuTitle.height + 36, null, null, Flags.SOUND_EXT, function (res) {
+		importInstExplorer = new UIFileExplorer(menuTitle.x, menuTitle.y + menuTitle.height + 36, null, null, Flags.SOUND_EXT, function (path, res) {
+			if (path == null || res == null) return;
 			var audioPlayer:UIAudioPlayer = new UIAudioPlayer(importInstExplorer.x + 8, importInstExplorer.y + 8, res);
 			importInstExplorer.members.push(audioPlayer);
 			importInstExplorer.uiElement = audioPlayer;
 		});
 		importAudioGroup.add(importInstExplorer);
-		addLabelOn(importInstExplorer, "Inst Audio File").applyMarkup(
-			"Inst Audio File $* Required$",
+		addLabelOn(importInstExplorer, "").applyMarkup(
+			translate("instAudio"),
 			[new FlxTextFormatMarkerPair(new FlxTextFormat(0xFFAD1212), "$")]);
 
-		importVoicesExplorer = new UIFileExplorer(importInstExplorer.x + 320 + 26, importInstExplorer.y, null, null, Flags.SOUND_EXT, function (res) {
+		importVoicesExplorer = new UIFileExplorer(importInstExplorer.x + 320 + 26, importInstExplorer.y, null, null, Flags.SOUND_EXT, function (path, res) {
+			if (path == null || res == null) return;
 			var audioPlayer:UIAudioPlayer = new UIAudioPlayer(importVoicesExplorer.x + 8, importVoicesExplorer.y + 8, res);
 			importVoicesExplorer.members.push(audioPlayer);
 			importVoicesExplorer.uiElement = audioPlayer;
 		});
 		importAudioGroup.add(importVoicesExplorer);
-		addLabelOn(importVoicesExplorer, "Vocal Audio File");
+		addLabelOn(importVoicesExplorer, translate("voicesAudio"));
 
 		var menuTitle:UIText;
 		importDataGroup.add(menuTitle = new UIText(windowSpr.x + 20, windowSpr.y + 30 + 16, 0, "Add Data", 28));
 
 		importDataGroup.add(importIdTextBox = new UITextBox(menuTitle.x, menuTitle.y + menuTitle.height + 36));
-		addLabelOn(importIdTextBox, "Song file name").applyMarkup(
-			"Song file name $* Required$",
+		addLabelOn(importIdTextBox, "").applyMarkup(
+			translate("songFileName"),
 			[new FlxTextFormatMarkerPair(new FlxTextFormat(0xFFAD1212), "$")]);
 
-		importChartFile = new UIFileExplorer(importIdTextBox.x, importIdTextBox.y + importIdTextBox.height + 56, null, null, "fnfc", function (_) importIdTextBox.label.text = new haxe.io.Path(importChartFile.filePath).file);
+		importChartFile = new UIFileExplorer(importIdTextBox.x, importIdTextBox.y + importIdTextBox.height + 56, null, null, "fnfc", function (_, _) importIdTextBox.label.text = new haxe.io.Path(importChartFile.filePath).file);
 		importDataGroup.add(importChartFile);
-		addLabelOn(importChartFile, "Data/Chart File").applyMarkup(
-			"Data/Chart File $* Required$",
+		addLabelOn(importChartFile, "").applyMarkup(
+			translate("songDataFile"),
 			[new FlxTextFormatMarkerPair(new FlxTextFormat(0xFFAD1212), "$")]);
 
 		importMetaFile = new UIFileExplorer(importChartFile.x + 320 + 26, importChartFile.y, null, null, "json");
 		importDataGroup.add(importMetaFile);
-		addLabelOn(importMetaFile, "Meta File").applyMarkup(
-			"Meta File $* Required$",
+		addLabelOn(importMetaFile, "").applyMarkup(
+			translate("songMetaFile"),
 			[new FlxTextFormatMarkerPair(new FlxTextFormat(0xFFAD1212), "$")]);
 
-		saveButton = new UIButton(windowSpr.x + windowSpr.bWidth - 20 - 125, windowSpr.y + windowSpr.bHeight - 16 - 32, "Save & Close", function() {
+		saveButton = new UIButton(windowSpr.x + windowSpr.bWidth - 20 - 125, windowSpr.y + windowSpr.bHeight - 16 - 32, TU.translate("editor.saveClose"), function() {
 			var pages = isImporting ? importPages : pages;
 			if (curPage == pages.length-1) {
 				saveSongInfo();
@@ -238,7 +254,7 @@ class SongCreationScreen extends UISubstateWindow {
 		}, 125);
 		add(saveButton);
 
-		backButton = new UIButton(saveButton.x - 20 - saveButton.bWidth, saveButton.y, "< Back", function() {
+		backButton = new UIButton(saveButton.x - 20 - saveButton.bWidth, saveButton.y, "< " + translate("back"), function() {
 			curPage--;
 			refreshPages();
 
@@ -246,7 +262,7 @@ class SongCreationScreen extends UISubstateWindow {
 		}, 125);
 		add(backButton);
 
-		closeButton = new UIButton(backButton.x - 20 - saveButton.bWidth, saveButton.y, "Cancel", function() {
+		closeButton = new UIButton(backButton.x - 20 - saveButton.bWidth, saveButton.y, TU.translate("editor.close"), function() {
 			close();
 		}, 125);
 		add(closeButton);
@@ -275,7 +291,7 @@ class SongCreationScreen extends UISubstateWindow {
 		if (isImporting)
 		{
 			var name = engineDropdown.options[engineDropdown.index];
-			var project = name == "V-Slice Project (.fnfc)";
+			var project = name == translate("vsliceProject");
 
 			if (curPage == 1) {
 				importInstExplorer.selectable = importVoicesExplorer.selectable = !project;
@@ -283,7 +299,7 @@ class SongCreationScreen extends UISubstateWindow {
 			} else if (curPage == 2) {
 				importIdTextBox.selectable = !project;
 				importChartFile.fileType = project ? "fnfc" : "json";
-				importMetaFile.selectable = name == "V-Slice";
+				importMetaFile.selectable = name == translate("vslice");
 				saveButton.selectable = importChartFile.file != null && (!importMetaFile.selectable || importMetaFile.file != null) && (!importIdTextBox.selectable || importIdTextBox.label.text.trim().length > 0);
 			} else
 				saveButton.selectable = true;
@@ -315,10 +331,10 @@ class SongCreationScreen extends UISubstateWindow {
 		titleSpr.x = windowSpr.x + 25;
 		titleSpr.y = windowSpr.y + ((30 - titleSpr.height) / 2);
 
-		saveButton.field.text = curPage == pages.length-1 ? "Save & Close" : 'Next >';
+		saveButton.field.text = curPage == pages.length-1 ? TU.translate("editor.saveClose") : translate("next") + ' >';
 		titleSpr.text = '$winTitle (${curPage+1}/${pages.length})';
 
-		backButton.field.text = '< Back';
+		backButton.field.text = '< ' + translate("back");
 		backButton.visible = backButton.exists = curPage > 0;
 
 		backButton.x = (saveButton.x = windowSpr.x + windowSpr.bWidth - 20 - 125) - 20 - saveButton.bWidth;
@@ -342,9 +358,9 @@ class SongCreationScreen extends UISubstateWindow {
 	function saveSongInfo() {
 		if (isImporting)
 		{
-			try switch(engineDropdown.options[engineDropdown.index])
+			try switch(engineDropdown.index)
 			{
-				case "V-Slice Project (.fnfc)":
+				case 0 /*"V-Slice Project (.fnfc)"*/:
 					var files:Map<String, Any> = [];
 					for (field in new ZipReader(new BytesInput(importChartFile.file)).read()) {
 						var fileName = field.fileName;
@@ -352,7 +368,7 @@ class SongCreationScreen extends UISubstateWindow {
 						files.set(fileName, fileContent);
 					}
 					saveFromVSlice(files);
-				case "V-Slice":
+				case 1 /*"V-Slice"*/:
 					var songId = importIdTextBox.label.text;
 					var files:Map<String, Any> = [];
 					files.set('${songId}-metadata.json', importMetaFile.file);
@@ -395,14 +411,14 @@ class SongCreationScreen extends UISubstateWindow {
 				]));
 			}
 		} else {
-			for (stepper in [bpmStepper, beatsPerMeasureStepper, stepsPerBeatStepper])
+			for (stepper in [bpmStepper, beatsPerMeasureStepper, denominatorStepper])
 				@:privateAccess stepper.__onChange(stepper.label.text);
 
 			var meta:ChartMetaData = {
 				name: songNameTextBox.label.text,
 				bpm: bpmStepper.value,
 				beatsPerMeasure: Std.int(beatsPerMeasureStepper.value),
-				stepsPerBeat: Std.int(stepsPerBeatStepper.value),
+				stepsPerBeat: Std.int(16 / denominatorStepper.value),
 				displayName: displayNameTextBox.label.text,
 				icon: iconTextBox.label.text,
 				color: colorWheel.curColor,

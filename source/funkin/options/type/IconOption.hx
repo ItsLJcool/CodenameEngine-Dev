@@ -12,6 +12,8 @@ class IconOption extends TextOption {
 	public function new(name:String, desc:String, icon:String, callback:Void->Void) {
 		super(name, desc, callback);
 
+		__text.x = 100;
+
 		iconSpr = new HealthIcon(icon, false);
 		iconSpr.setPosition(90 - iconSpr.width, (__text.height - iconSpr.height) / 2);
 		iconSpr.setUnstretchedGraphicSize(150, 150, true);

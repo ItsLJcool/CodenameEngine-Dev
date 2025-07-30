@@ -17,7 +17,7 @@ import lime.app.Application;
 import sys.thread.Thread;
 #end
 
-class DiscordUtil
+final class DiscordUtil
 {
 	public static var currentID(default, set):String = null;
 	public static var discordThread:#if DISCORD_RPC Thread #else Dynamic #end = null;
@@ -80,7 +80,7 @@ class DiscordUtil
 			try
 				config = Json.parse(Assets.getText(jsonPath))
 			catch (e)
-				Logs.trace('Couldn\'t load Discord RPC configuration: ${e.toString()}', ERROR);
+				Logs.error('Couldn\'t load Discord RPC configuration: ${e.toString()}');
 		}
 
 		if (config == null)
@@ -89,6 +89,10 @@ class DiscordUtil
 		config.logoKey = config.logoKey.getDefault(Flags.DEFAULT_DISCORD_LOGO_KEY);
 		config.logoText = config.logoText.getDefault(Flags.DEFAULT_DISCORD_LOGO_TEXT);
 		config.clientID = config.clientID.getDefault(Flags.DEFAULT_DISCORD_CLIENT_ID);
+		
+		if (Flags.MOD_DISCORD_CLIENT_ID.length > 0) config.clientID = Flags.MOD_DISCORD_CLIENT_ID;
+		if (Flags.MOD_DISCORD_LOGO_KEY.length > 0) config.logoKey = Flags.MOD_DISCORD_LOGO_KEY;
+		if (Flags.MOD_DISCORD_LOGO_TEXT.length > 0) config.logoText = Flags.MOD_DISCORD_LOGO_TEXT;
 		currentID = config.clientID;
 		#end
 	}
@@ -364,7 +368,7 @@ class DiscordUtil
 		Logs.traceColored([
 			Logs.getPrefix("Discord"),
 			Logs.logText("Someone has just requested to join", YELLOW)
-		], WARNING);
+		], INFO);
 
 		var req:DUser = DUser.initRaw(request);
 		call("onJoinRequest", [req]);

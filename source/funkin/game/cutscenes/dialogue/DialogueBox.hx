@@ -54,8 +54,8 @@ class DialogueBox extends FunkinSprite {
 			for(pos in dialogueBoxData.nodes.charpos) {
 				if (!pos.has.name) continue;
 				positions[pos.att.name] = {
-					x: pos.has.x ? Std.parseFloat(pos.att.x).getDefault(0) : 0,
-					y: pos.has.y ? Std.parseFloat(pos.att.y).getDefault(0) : 0,
+					x: pos.has.x ? Std.parseFloat(pos.att.x).getDefaultFloat(0) : 0,
+					y: pos.has.y ? Std.parseFloat(pos.att.y).getDefaultFloat(0) : 0,
 					flipBubble: pos.getAtt('flipBubble') == "true"
 				};
 			}
@@ -64,8 +64,8 @@ class DialogueBox extends FunkinSprite {
 			if (textNode == null)
 				throw "The dialog box XML requires one text element.";
 			text = new FlxTypeText(
-				textNode.has.x ? Std.parseFloat(textNode.att.x).getDefault(0) : 0,
-				FlxG.height - (textNode.has.y ? Std.parseFloat(textNode.att.y).getDefault(0) : 0),
+				textNode.has.x ? Std.parseFloat(textNode.att.x).getDefaultFloat(0) : 0,
+				FlxG.height - (textNode.has.y ? Std.parseFloat(textNode.att.y).getDefaultFloat(0) : 0),
 				textNode.has.width ? Std.parseInt(textNode.att.width).getDefault(FlxG.width) : FlxG.width, "");
 			text.color = textNode.getAtt("color").getColorFromDynamic().getDefault(0xFF000000);
 			text.size = Std.parseInt(textNode.att.size).getDefault(20);
@@ -78,10 +78,10 @@ class DialogueBox extends FunkinSprite {
 					case "outline_fast": OUTLINE_FAST;
 					default: OUTLINE;
 				}
-				text.borderQuality = Std.parseFloat(textNode.getAtt("borderQuality")).getDefault(1);
-				text.shadowOffset.x = Std.parseFloat(textNode.getAtt("shadowOffsetX")).getDefault(1);
-				text.shadowOffset.y = Std.parseFloat(textNode.getAtt("shadowOffsetY")).getDefault(1);
-				text.borderSize = Std.parseFloat(textNode.getAtt("borderSize")).getDefault(1);
+				text.borderQuality = Std.parseFloat(textNode.getAtt("borderQuality")).getDefaultFloat(1);
+				text.shadowOffset.x = Std.parseFloat(textNode.getAtt("shadowOffsetX")).getDefaultFloat(1);
+				text.shadowOffset.y = Std.parseFloat(textNode.getAtt("shadowOffsetY")).getDefaultFloat(1);
+				text.borderSize = Std.parseFloat(textNode.getAtt("borderSize")).getDefaultFloat(1);
 				text.borderColor = textNode.getAtt("borderColor").getColorFromDynamic().getDefault(0xFFFFFFFF);
 			}
 		} catch(e) {

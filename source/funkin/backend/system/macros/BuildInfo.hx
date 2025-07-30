@@ -5,7 +5,7 @@ using StringTools;
 #if macro
 class BuildInfo {
 	public static function printBuildInfo() {
-		if(haxe.macro.Context.defined("display")) return;
+		if(haxe.macro.Context.defined("display") || haxe.macro.Context.defined("display-details")) return;
 		var haxeVersion = haxe.macro.Context.definedValue("haxe").trim();
 		var sleepChangeVersion = false;
 

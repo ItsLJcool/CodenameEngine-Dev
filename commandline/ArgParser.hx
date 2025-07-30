@@ -17,18 +17,18 @@ class ArgParser {
 		this.args = args;
 
 		this.options = new Map();
-		var copy = args.copy();
+		final copy = args.copy();
 		var i = 0;
 		while(copy.length > 0) {
 			var arg = copy.shift();
 			// this parses the -NAME=VALUE
 			if (arg.startsWith("-")) {
 				var key = arg.substr(1);
-				var isLongKey = key.startsWith("-");
+				final isLongKey = key.startsWith("-");
 				if (isLongKey) {
 					key = key.substr(1);
 				}
-				var split = key.split("=");
+				final split = key.split("=");
 				var longName = split.shift();
 				if(!isLongKey) {
 					// Allow -ABC to be parsed as -A -B -C
@@ -43,8 +43,8 @@ class ArgParser {
 					// Parse the last option with value support
 				}
 
-				var name = rename(longName);
-				var value = (split.length > 0) ? split.join("=") : null;
+				final name = rename(longName);
+				final value = (split.length > 0) ? split.join("=") : null;
 				options.set(name, value);
 
 				args.splice(i, 1);

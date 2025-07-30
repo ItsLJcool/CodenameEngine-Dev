@@ -44,6 +44,7 @@ class Setup {
 		var REINSTALL_ALL = args.existsOption("reinstall");
 		var SILENT = args.existsOption("silent-progress");
 		var FAST = args.existsOption("fast");
+		// TODO: add only install missing libs
 
 		// to prevent messing with currently installed libs
 		if (!FileSystem.exists('.haxelib'))
@@ -67,13 +68,13 @@ class Setup {
 			return;
 		}
 
-		var events:Array<Event> = [];
-		var libsXML:Access = new Access(Xml.parse(File.getContent(libFile)).firstElement());
+		final events:Array<Event> = [];
+		final libsXML:Access = new Access(Xml.parse(File.getContent(libFile)).firstElement());
 
 		function handleLib(libNode:Access) {
 			switch(libNode.name) {
-				case "lib" | "git":
-					var lib:Library = {
+				case "lib" | "git" | "custom":
+					final lib:Library = {
 						name: libNode.att.name,
 						type: libNode.name,
 						skipDeps: libNode.has.skipDeps ? libNode.att.skipDeps == "true" : false,
@@ -122,15 +123,16 @@ class Setup {
 			}
 		}
 
-		var platform = switch(Sys.systemName()) {
+		final platform = switch(Sys.systemName()) {
 			case "Windows": "windows";
 			case "Mac": "mac";
 			case "Linux": "linux";
 			case def: def.toLowerCase();
 		}
 
-		var defines = args.args.copy();
+		final defines = args.args.copy();
 		defines.push(platform);
+		defines.push("true");
 		if(args.args.length == 0) defines.push("all");
 
 		function parse(libNode:Access) {
@@ -147,6 +149,8 @@ class Setup {
 				handleLib(libNode);
 			}
 		}
+
+		final shouldCheckHaxeVersion = !libsXML.has.checkVersion || Utils.evaluateArgsCondition(libsXML.att.checkVersion, defines);
 
 		for (libNode in libsXML.elements) {
 			parse(libNode);
@@ -187,6 +191,8 @@ class Setup {
 							} else {
 								command('haxelib$commandPrefix git ${lib.name} ${lib.url}${lib.ref != null ? ' ${lib.ref}' : ''}');
 							}
+						case "custom":
+							command('haxelib$commandPrefix dev ${lib.name} "./libraries/${lib.name}"');
 						default:
 							prettyPrint('Cannot resolve library of type "${lib.type}"');
 					}
@@ -199,10 +205,10 @@ class Setup {
 					}
 					var oldCwd = Sys.getCwd();
 					if(lib != null) {
-						var libPrefix = '.haxelib/$lib';
+						final libPrefix = '.haxelib/$lib';
 						if(FileSystem.exists(libPrefix)) {
 							if(FileSystem.exists(libPrefix + '/.dev')) { // haxelib dev
-								var devPath = File.getContent(libPrefix + '/.dev');
+								final devPath = File.getContent(libPrefix + '/.dev');
 								if(!FileSystem.exists(devPath)) {
 									Sys.println('Cannot find dev path $devPath for $lib');
 									Sys.setCwd(oldCwd);
@@ -210,7 +216,7 @@ class Setup {
 								}
 								Sys.setCwd(devPath + dir);
 							} else if(FileSystem.exists(libPrefix + '/.current')) {
-								var version = StringTools.replace(File.getContent(libPrefix + '/.current'), ".", ",");
+								final version = StringTools.replace(File.getContent(libPrefix + '/.current'), ".", ",");
 								if(!FileSystem.exists(libPrefix + '/$version')) {
 									Sys.println('Cannot find version $version of $lib');
 									Sys.setCwd(oldCwd);
@@ -225,13 +231,13 @@ class Setup {
 						}
 					}
 					for(line in cmd.lines) {
-						var line = StringTools.replace(line, "$PLATFORM", platform);
+						final line = StringTools.replace(line, "$PLATFORM", platform);
 						//Sys.println(line);
 						command(line);
 					}
 					Sys.setCwd(oldCwd);
 				case PRINT:
-					var data:PrintData = event.data;
+					final data:PrintData = event.data;
 					if(data.pretty)
 						prettyPrint(data.text);
 					else
@@ -239,30 +245,28 @@ class Setup {
 			}
 		}
 
-		/*var proc = new Process('haxe --version');
-		proc.exitCode(true);
-		var haxeVer = proc.stdout.readLine();
-		if (haxeVer != "4.2.5") {
+		if(shouldCheckHaxeVersion) {
+			final proc = new Process('haxe --version');
+			proc.exitCode(true);
+			final haxeVer = proc.stdout.readLine();
+
 			// check for outdated haxe
-			var curHaxeVer = [for(v in haxeVer.split(".")) Std.parseInt(v)];
-			var requiredHaxeVer = [4, 2, 5];
-			for(i in 0...requiredHaxeVer.length) {
-				if (curHaxeVer[i] < requiredHaxeVer[i]) {
-					prettyPrint("!! WARNING !!");
-					Sys.println("Your current Haxe version is outdated.");
-					Sys.println('You\'re using ${haxeVer}, while the required version is 4.2.5.');
-					Sys.println('The engine may not compile with your current version of Haxe.');
-					Sys.println('We recommend upgrading to 4.2.5');
-					break;
-				} else if (curHaxeVer[i] > requiredHaxeVer[i]) {
-					prettyPrint("!! WARNING !!"
-					+ "\nUsing Haxe 4.3.0 and above is currently not recommended due to lack of testing.");
-					Sys.println('');
-					Sys.println('We recommend downgrading back to 4.2.5.');
+			final curHaxeVer = [for(v in haxeVer.split(".")) Std.parseInt(v)];
+			final minumumVersion = [4, 2, 5];
+			for(i in 0...minumumVersion.length) {
+				if (curHaxeVer[i] > minumumVersion[i]) break;
+				if (curHaxeVer[i] < minumumVersion[i]) {
+					prettyPrint([
+						"!! WARNING !!",
+						"Your current Haxe version is outdated.",
+						'You\'re using ${haxeVer}, whilst the required version is 4.2.5 or newer.',
+						'The engine may not compile with your current version of Haxe.',
+						'We recommend upgrading to 4.2.5 or newer'
+					].join("\n"));
 					break;
 				}
 			}
-		}*/
+		}
 
 		// vswhere.exe its used to find any visual studio related installations on the system, including full visual studio ide installations, visual studio build tools installations, and other related components  - Nex
 		if (CHECK_VSTUDIO && Compiler.getBuildTarget().toLowerCase() == "windows" && new Process('"C:/Program Files (x86)/Microsoft Visual Studio/Installer/vswhere.exe" -property catalog_productDisplayVersion').exitCode(true) == 1) {
@@ -280,7 +284,7 @@ class Setup {
 	}
 
 	public static function prettyPrint(text:String) {
-		var lines = text.split("\n");
+		final lines = text.split("\n");
 		var length = -1;
 		for(line in lines)
 			if(line.length > length)
@@ -298,9 +302,9 @@ class Setup {
 
 
 	public static function centerText(text:String, width:Int):String {
-		var centerOffset = (width - text.length) / 2;
-		var left = repeat(' ', Math.floor(centerOffset));
-		var right = repeat(' ', Math.ceil(centerOffset));
+		final centerOffset = (width - text.length) / 2;
+		final left = repeat(' ', Math.floor(centerOffset));
+		final right = repeat(' ', Math.ceil(centerOffset));
 		return left + text + right;
 	}
 

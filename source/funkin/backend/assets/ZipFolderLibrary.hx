@@ -1,29 +1,18 @@
 package funkin.backend.assets;
 
-#if MOD_SUPPORT
-import funkin.backend.utils.SysZip.SysZipEntry;
-import funkin.backend.utils.SysZip;
 import haxe.io.Path;
-import haxe.zip.Reader;
-import lime.app.Event;
-import lime.app.Future;
-import lime.app.Promise;
 import lime.graphics.Image;
 import lime.media.AudioBuffer;
 import lime.text.Font;
-import lime.utils.AssetLibrary;
-import lime.utils.AssetManifest;
-import lime.utils.AssetType;
-import lime.utils.Assets as LimeAssets;
 import lime.utils.Bytes;
-import lime.utils.Log;
-import openfl.text.Font as OpenFLFont;
-import sys.FileStat;
-import sys.FileSystem;
-import sys.io.File;
+import openfl.utils.AssetLibrary;
+
+#if MOD_SUPPORT
+import funkin.backend.utils.SysZip.SysZipEntry;
+import funkin.backend.utils.SysZip;
 
 class ZipFolderLibrary extends AssetLibrary implements IModsAssetLibrary {
-	public var zipPath:String;
+	public var basePath:String;
 	public var modName:String;
 	public var libName:String;
 	public var useImageCache:Bool = false;
@@ -34,16 +23,14 @@ class ZipFolderLibrary extends AssetLibrary implements IModsAssetLibrary {
 	public var lowerCaseAssets:Map<String, SysZipEntry> = [];
 	public var nameMap:Map<String, String> = [];
 
-	public function new(zipPath:String, libName:String, ?modName:String) {
-		this.zipPath = zipPath;
+	public function new(basePath:String, libName:String, ?modName:String) {
 		this.libName = libName;
 
-		if(modName == null)
-			this.modName = libName;
-		else
-			this.modName = modName;
+		this.basePath = basePath;
+		
+		this.modName = (modName == null) ? libName : modName;
 
-		zip = SysZip.openFromFile(zipPath);
+		zip = SysZip.openFromFile(basePath);
 		zip.read();
 		for(entry in zip.entries) {
 			lowerCaseAssets[entry.fileName.toLowerCase()] = assets[entry.fileName.toLowerCase()] = assets[entry.fileName] = entry;
@@ -51,6 +38,10 @@ class ZipFolderLibrary extends AssetLibrary implements IModsAssetLibrary {
 		}
 
 		super();
+	}
+
+	function toString():String {
+		return '(ZipFolderLibrary: $libName/$modName)';
 	}
 
 	public var _parsedAsset:String;
@@ -113,8 +104,8 @@ class ZipFolderLibrary extends AssetLibrary implements IModsAssetLibrary {
 	}
 
 	private function getAssetPath() {
-		trace('[ZIP]$zipPath/$_parsedAsset');
-		return '[ZIP]$zipPath/$_parsedAsset';
+		trace('[ZIP]$basePath/$_parsedAsset');
+		return '[ZIP]$basePath/$_parsedAsset';
 	}
 
 	// TODO: rewrite this to 1 function, like ModsFolderLibrary
@@ -161,6 +152,16 @@ class ZipFolderLibrary extends AssetLibrary implements IModsAssetLibrary {
 			}
 		}
 		return content;
+	}
+
+	// Backwards compat
+
+	@:noCompletion public var zipPath(get, set):String;
+	@:noCompletion private inline function get_zipPath():String {
+		return basePath;
+	}
+	@:noCompletion private inline function set_zipPath(value:String):String {
+		return basePath = value;
 	}
 }
 #end

@@ -5,7 +5,7 @@
 		title="Friday Night Funkin' - Codename Engine" main="funkin.backend.system.Main"
 		file="CodenameEngine" packageName="com.yoshman29.codenameengine"
 		package="com.yoshman29.codenameengine"
-		version="0.1.0-legacy" company="Yoshman29" />
+		version="1.0.0" company="Yoshman29" />
 
 	<!--
 		CHANGE THE SAVE PATH & NAME FOR YOUR MOD HERE!
@@ -28,7 +28,7 @@
 	<!-- ____________________________ Window Settings ___________________________ -->
 
 	<!--These window settings apply to all targets-->
-	<window width="1280" height="720" fps="" background="#000000" hardware="true" vsync="false" />
+	<window width="1280" height="720" background="#000000" hardware="true" vsync="false" />
 
 	<!--HTML5-specific-->
 	<window if="html5" resizable="true" />
@@ -109,25 +109,34 @@
 
 	<!-- Comment this out to disable Discord RPC !-->
 	<section if="cpp">
-		<define name="DISCORD_RPC" if="desktop"/>
+		<!-- <define name="DISCORD_RPC" if="desktop"/> -->
 	</section>
+
+	<!-- Uncomment this to achive faster compile times, will strip extraneous and commonly unused features. -->
+	<!-- <define name="STRIPPED_COMPILE" unless="debug"/> -->
+
+	<!-- Comment this out to disable modcharting features -->
+	<define name="MODCHARTING_FEATURES" unless="STRIPPED_COMPILE" />
 
 	<!-- Comment this out to disable GitHub API integration !-->
 	<define name="GITHUB_API" unless="web || hl"/>
 
 	<!-- Comment this out to prevent unused classes from being compiled.
 		 Reduces compilation time at the cost of limited HScript flexibility. !-->
-	<define name="COMPILE_ALL_CLASSES" />
+	<define name="COMPILE_ALL_CLASSES" unless="STRIPPED_COMPILE" />
 
 	<!-- Comment this out to prevent extending classes in hscript.
 		 Reduces compilation time at the cost of limited HScript flexibility. !-->
-	<define name="CUSTOM_CLASSES" />
+	<define name="CUSTOM_CLASSES" unless="STRIPPED_COMPILE" />
 
 	<!-- Comment this out to disable multithreading !-->
 	<haxedef name="ALLOW_MULTITHREADING" unless="web || flash" />
 
 	<!-- Comment this out to disable mods folder !-->
 	<haxedef name="MOD_SUPPORT" unless="web"/>
+
+	<!-- Comment this out to disable translations folders !-->
+	<haxedef name="TRANSLATIONS_SUPPORT"/>
 
 	<!-- Comment this out to disable global scripts !-->
 	<haxedef name="GLOBAL_SCRIPT" />
@@ -142,13 +151,13 @@
 	<haxedef name="NDLLS_SUPPORTED" unless="web || iphonesim || hl" />
 
 	<!-- Comment this out to disable support for Away3D Flixel Integration (reduces compile times) !-->
-	<define name="THREE_D_SUPPORT" />
+	<define name="THREE_D_SUPPORT" unless="STRIPPED_COMPILE" />
 
 	<!-- Comment this out to disable support for Funkin Audio Visualizer (reduces compile times) !-->
-	<define name="AUDIO_VIS_SUPPORT" />
+	<define name="AUDIO_VIS_SUPPORT" unless="STRIPPED_COMPILE" />
 
 	<!-- Comment this out to disable support for Nape integration (flixel.addons.nape) (reduces compile times) !-->
-	<define name="NAPE_ENABLED" />
+	<define name="NAPE_ENABLED" unless="STRIPPED_COMPILE" />
 
 	<!-- Comment this out to disable video cutscene support, in case of compilation errors. !-->
 	<section if="cpp">
@@ -173,8 +182,6 @@
 	<haxedef name="SOFTCODED_CLASSES" if="SOFTCODED_CLASSES" />
 	<haxedef name="openfl_dpi_aware" if="openfl_dpi_aware" />
 
-	<haxedef name="EXPERIMENTAL_FLXGRAPHIC_DESTROY_FIX" />
-
 	<!-- _______________________________ Libraries ______________________________ -->
 
 	<!-- KEEP BOTH OF THESE AS THERE ARE SOME PARTICULAR CASES! -->
@@ -198,8 +205,17 @@
 	<haxelib name="hscript-improved" />
 	<haxelib name="hxdiscord_rpc" if="DISCORD_RPC"/>
 	<haxelib name="markdown" />
+	<haxelib name="hxcpp-debug-server" if="TEST_BUILD debug" />
 
 	<!-- _________________________________ Additional stuff _______________________________ -->
+
+	<section if="MODCHARTING_FEATURES">
+		<haxedef name="FM_ENGINE" value="CODENAME"/>
+		<haxedef name="FM_ENGINE_VERSION" value="1.0"/>
+
+		<haxelib name="funkin-modchart" />
+		<haxeflag name="--macro" value="modchart.backend.macros.Macro.includeFiles()"/>
+	</section>
 
 	<section if="COMPILE_ALL_CLASSES">
 		<haxeflag name="-dce" value="no" />
@@ -217,4 +233,7 @@
 	<haxedef name="HXCPP_CATCH_SEGV" />
 
 	<haxedef name="hscriptPos" /> <!-- for logging -->
+
+	<!-- EXPERMENTAL FEATURES -->
+	<haxedef name="EXPERIMENTAL_FLXGRAPHIC_DESTROY_FIX" />
 </project>

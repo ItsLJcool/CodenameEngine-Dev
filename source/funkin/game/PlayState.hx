@@ -377,13 +377,28 @@ class PlayState extends MusicBeatState
 	 */
 	public var camZooming:Bool = false;
 	/**
-	  * Interval of cam zooming (beats).
-	  * For example: if set to 4, the camera will zoom every 4 beats.
-	  */
-	public var camZoomingInterval:Int = Flags.DEFAULT_CAM_ZOOM_INTERVAL;
+	 * Interval of cam zooming (in conductor values).
+	 * Example: If Interval is 1 and Beat Type is on MEASURE, it'll zoom every a measure.
+	 * NOTE: Will set to 4 if not found any other time signatures unlike 4/4
+	 */
+	public var camZoomingInterval:Float = Flags.DEFAULT_CAM_ZOOM_INTERVAL;
 	/**
-	  * How strong the cam zooms should be (defaults to 1)
-	  */
+	 * Number of Conductor values to offset camZooming by.
+	 */
+	public var camZoomingOffset:Float = Flags.DEFAULT_CAM_ZOOM_OFFSET;
+	/**
+	 * Beat type for interval of cam zooming.
+	 * Example: If Beat Type is on STEP and Interval is 2, it'll zoom every 2 steps.
+	 * NOTE: Will set to BEAT if not found any other time signatures unlike 4/4
+	 */
+	public var camZoomingEvery:BeatType = MEASURE;
+	/**
+	 * Stores what was the last beat for the cam zooming intervals.
+	 */
+	public var camZoomingLastBeat:Float;
+	/**
+	 * How strong the cam zooms should be (defaults to 1)
+	 */
 	public var camZoomingStrength:Float = Flags.DEFAULT_CAM_ZOOM_STRENGTH;
 	/**
 	  * Default multiplier for `maxCamZoom`.
@@ -509,7 +524,7 @@ class PlayState extends MusicBeatState
 	@:noCompletion @:dox(hide) private var _endSongCalled:Bool = false;
 
 	@:dox(hide)
-	var __vocalOffsetViolation:Float = 0;
+	var __vocalSyncTimer:Float = 0;
 
 	private function get_accuracy():Float {
 		if (accuracyPressedNotes <= 0) return -1;
@@ -667,7 +682,7 @@ class PlayState extends MusicBeatState
 					for (event in SONG.events) songEvents.pushOnce(event.name);
 
 					for (file in Paths.getFolderContent('data/events/', true, fromMods ? MODS : BOTH)) {
-						var fileName:String = Path.withoutExtension(Path.withoutDirectory(file));
+						var fileName:String = CoolUtil.getFilename(file);
 						if (EventsData.eventsList.contains(fileName) && songEvents.contains(fileName)) {
 							addScript(file);
 						}
@@ -723,7 +738,9 @@ class PlayState extends MusicBeatState
 
 			var strOffset:Float = strumLine.strumLinePos != null ? strumLine.strumLinePos : (strumLine.type == 1 ? 0.75 : 0.25);
 			var strScale:Float = strumLine.strumScale != null ? strumLine.strumScale : 1;
-			var strXPos:Float = (FlxG.width * strOffset) - (Note.swagWidth * strScale * 2);
+			var strSpacing:Float = strumLine.strumSpacing == null ? 1 : strumLine.strumSpacing;
+			var keyCount:Int = strumLine.keyCount == null ? 4 : strumLine.keyCount;
+			var strXPos:Float = StrumLine.calculateStartingXPos(strOffset, strScale, strSpacing, keyCount);
 			var startingPos:FlxPoint = strumLine.strumPos != null ?
 				FlxPoint.get(strumLine.strumPos[0] == 0 ? strXPos : strumLine.strumPos[0], strumLine.strumPos[1]) :
 				FlxPoint.get(strXPos, this.strumLine.y);
@@ -802,9 +819,9 @@ class PlayState extends MusicBeatState
 			add(icon);
 		}
 
-		scoreTxt = new FunkinText(healthBarBG.x + 50, healthBarBG.y + 30, Std.int(healthBarBG.width - 100), "Score:0", 16);
-		missesTxt = new FunkinText(healthBarBG.x + 50, healthBarBG.y + 30, Std.int(healthBarBG.width - 100), "Misses:0", 16);
-		accuracyTxt = new FunkinText(healthBarBG.x + 50, healthBarBG.y + 30, Std.int(healthBarBG.width - 100), "Accuracy:-% (N/A)", 16);
+		scoreTxt = new FunkinText(healthBarBG.x + 50, healthBarBG.y + 30, Std.int(healthBarBG.width - 100), TEXT_GAME_SCORE.format([songScore]), 16);
+		missesTxt = new FunkinText(healthBarBG.x + 50, healthBarBG.y + 30, Std.int(healthBarBG.width - 100), TEXT_GAME_MISSES.format([misses]), 16);
+		accuracyTxt = new FunkinText(healthBarBG.x + 50, healthBarBG.y + 30, Std.int(healthBarBG.width - 100), TEXT_GAME_ACCURACY.format(["-%", "(N/A)"]), 16);
 		accuracyTxt.addFormat(accFormat, 0, 1);
 
 		for(text in [scoreTxt, missesTxt, accuracyTxt]) {
@@ -835,15 +852,12 @@ class PlayState extends MusicBeatState
 
 		if (chartingMode) {
 			WindowUtils.prefix = Charter.undos.unsaved ? Flags.UNDO_PREFIX : "";
-			WindowUtils.suffix = " (Chart Playtesting)";
+			WindowUtils.suffix = TU.translate("playtesting.chartPlaytesting");
 
 			SaveWarning.showWarning = Charter.undos.unsaved;
 			SaveWarning.selectionClass = CharterSelection;
 			SaveWarning.warningFunc = saveWarn;
-			SaveWarning.saveFunc = () ->  {
-				@:privateAccess Chart.save('${Paths.getAssetsRoot()}/songs/${Charter.__song}',
-					SONG, Charter.__diff, {saveMetaInChart: false, prettyPrint: Options.editorPrettyPrint});
-			}
+			SaveWarning.saveFunc = () -> Charter.saveEverything(false);
 		}
 	}
 
@@ -999,25 +1013,10 @@ class PlayState extends MusicBeatState
 
 		inst.onComplete = endSong;
 
-		if (!paused) {
-			FlxG.sound.setMusic(inst);
-			FlxG.sound.music.play();
-		}
-		vocals.play();
-
-		vocals.pause();
-		inst.pause();
-		for (strumLine in strumLines.members) {
-			strumLine.vocals.play();
-			strumLine.vocals.pause();
-		}
-		inst.time = vocals.time = (chartingMode && Charter.startHere) ? Charter.startTime : 0;
-		for (strumLine in strumLines.members) {
-			strumLine.vocals.time = vocals.time;
-			strumLine.vocals.play();
-		}
-		vocals.play();
-		inst.play();
+		var time = (chartingMode && Charter.startHere) ? Charter.startTime : 0;
+		for (strumLine in strumLines.members) strumLine.vocals.play(true, time);
+		vocals.play(true, time);
+		inst.play(true, time);
 
 		updateDiscordPresence();
 
@@ -1028,15 +1027,14 @@ class PlayState extends MusicBeatState
 		scripts.call("destroy");
 		for(g in __cachedGraphics)
 			g.useCount--;
-		@:privateAccess
-			for (strumLine in strumLines.members)
-				FlxG.sound.destroySound(strumLine.vocals);
-		super.destroy();
-		scripts = FlxDestroyUtil.destroy(scripts);
 		@:privateAccess {
-			FlxG.sound.destroySound(inst);
+			for (strumLine in strumLines.members) FlxG.sound.destroySound(strumLine.vocals);
+			if (FlxG.sound.music != inst) FlxG.sound.destroySound(inst);
 			FlxG.sound.destroySound(vocals);
 		}
+		scripts = FlxDestroyUtil.destroy(scripts);
+
+		super.destroy();
 
 		WindowUtils.resetAffixes();
 		SaveWarning.reset();
@@ -1056,38 +1054,45 @@ class PlayState extends MusicBeatState
 	{
 		if (songData == null) songData = SONG;
 
-		events = songData.events != null ? songData.events.copy() : [];
-		// get first camera focus
-		for(e in events) {
-			if (e.time > 10) break;
-			if (e.name == "Camera Movement") {
-				executeEvent(e);
-				break;
+		var foundCam = false;
+		var foundSigs = songData.meta.beatsPerMeasure.getDefault(4) != 4 || songData.meta.stepsPerBeat.getDefault(4) != 4;
+
+		if (events == null) events = [];
+		else events = [
+			for (e in songData.events) {
+				switch (e.name) {
+					case "Camera Movement": if (!foundCam && e.time < 10) {
+						foundCam = true;
+						executeEvent(e);
+					}
+					case "Time Signature Change": if (!foundSigs && (e.params[0] != 4 || e.params[1] != 4)) {
+						foundSigs = true;
+					}
+				}
+				e;
 			}
+		];
+
+		if (!foundSigs) {
+			camZoomingInterval = 4;
+			camZoomingEvery = BEAT;
 		}
+
 		events.sort(function(p1, p2) {
 			return FlxSort.byValues(FlxSort.DESCENDING, p1.time, p2.time);
 		});
 
-		var beatsPerMeasure:Float = songData.meta.beatsPerMeasure.getDefault(Flags.DEFAULT_BEATS_PER_MEASURE);
-		var stepsPerBeat:Int = songData.meta.stepsPerBeat.getDefault(Flags.DEFAULT_STEPS_PER_BEAT);
-
-		camZoomingInterval = Std.int(beatsPerMeasure);
-
-		Conductor.changeBPM(songData.meta.bpm, beatsPerMeasure, stepsPerBeat);
-
 		curSong = songData.meta.name.toLowerCase();
 		curSongID = curSong.replace(" ", "-");
 
-		inst = FlxG.sound.load(Paths.inst(SONG.meta.name, difficulty));
+		FlxG.sound.setMusic(inst = FlxG.sound.load(Assets.getMusic(Paths.inst(SONG.meta.name, difficulty))));
 		if (SONG.meta.needsVoices != false && Assets.exists(Paths.voices(SONG.meta.name, difficulty))) // null or true
-			vocals = FlxG.sound.load(Paths.voices(SONG.meta.name, difficulty));
+			vocals = FlxG.sound.load(Options.streamedVocals ? Assets.getMusic(Paths.voices(SONG.meta.name, difficulty)) : Paths.voices(SONG.meta.name, difficulty));
 		else
 			vocals = new FlxSound();
-		inst.group = FlxG.sound.defaultMusicGroup;
-		vocals.group = FlxG.sound.defaultMusicGroup;
 
-		inst.persist = vocals.persist = false;
+		vocals.group = FlxG.sound.defaultMusicGroup;
+		vocals.persist = false;
 
 		generatedMusic = true;
 	}
@@ -1099,7 +1104,7 @@ class PlayState extends MusicBeatState
 	@:dox(hide)
 	private inline function generateStrums(amount:Null<Int> = null):Void {
 		for(p in strumLines) {
-			var kc = amount != null ? amount : Flags.DEFAULT_STRUM_AMOUNT;
+			var kc = amount != null ? amount : p.data.keyCount;
 			p.generateStrums(kc);
 		}
 	}
@@ -1188,17 +1193,11 @@ class PlayState extends MusicBeatState
 	@:dox(hide)
 	function resyncVocals():Void
 	{
-		vocals.pause();
-		for (strumLine in strumLines.members) strumLine.vocals.pause();
+		var time = Conductor.songPosition + Conductor.songOffset;
+		for (strumLine in strumLines.members) strumLine.vocals.play(true, time);
+		vocals.play(true, time);
+		inst.play(true, time);
 
-		FlxG.sound.music.play();
-		Conductor.songPosition = FlxG.sound.music.time;
-		vocals.time = Conductor.songPosition + Conductor.songOffset;
-		for (strumLine in strumLines.members) {
-			strumLine.vocals.time = vocals.time;
-			strumLine.vocals.play();
-		}
-		vocals.play();
 		gameAndCharsCall("onVocalsResync");
 	}
 
@@ -1236,7 +1235,7 @@ class PlayState extends MusicBeatState
 
 		state.openSubState(new PlaytestingWarningSubstate(closingWindow, [
 			{
-				label: closingWindow ? "Exit Game" : "Exit To Menu",
+				label: closingWindow ? TU.translate("playtesting.exitGame") : TU.translate("playtesting.exitToMenu"),
 				color: 0xFF0000,
 				onClick: function(_) {
 					if (!closingWindow) {
@@ -1248,7 +1247,7 @@ class PlayState extends MusicBeatState
 				}
 			},
 			{
-				label: closingWindow ? "Save & Exit Game" : "Save & Exit To Menu",
+				label: closingWindow ? TU.translate("playtesting.saveAndExitGame") : TU.translate("playtesting.saveAndExitToMenu"),
 				color: 0xFFFF00,
 				onClick: function(_) {
 					if (SaveWarning.saveFunc != null) SaveWarning.saveFunc();
@@ -1261,7 +1260,7 @@ class PlayState extends MusicBeatState
 				}
 			},
 			{
-				label: "Cancel",
+				label: TU.translate("playtesting.cancel"),
 				color: 0xFFFFFF,
 				onClick: function (_) {
 					if (closingWindow) WindowUtils.resetClosing();
@@ -1283,16 +1282,22 @@ class PlayState extends MusicBeatState
 		iconP2.health = 1 - (healthBarPercent / 100);
 	}
 
+	// bypass the caching in FormatUtil by doing it manually so its faster
+	private var TEXT_GAME_SCORE = TU.getRaw("game.score");
+	private var TEXT_GAME_MISSES = TU.getRaw("game.misses");
+	private var TEXT_GAME_COMBOBREAKS = TU.getRaw("game.comboBreaks");
+	private var TEXT_GAME_ACCURACY = TU.getRaw("game.accuracy");
+
 	dynamic function updateRatingStuff() {
-		scoreTxt.text = 'Score:$songScore';
-		missesTxt.text = '${comboBreaks ? "Combo Breaks" : "Misses"}:$misses';
+		scoreTxt.text = TEXT_GAME_SCORE.format([songScore]);
+		missesTxt.text = (comboBreaks ? TEXT_GAME_COMBOBREAKS : TEXT_GAME_MISSES).format([misses]);
 
 		if (curRating == null)
 			curRating = new ComboRating(0, "[N/A]", 0xFF888888);
 
 		@:privateAccess {
 			accFormat.format.color = curRating.color;
-			accuracyTxt.text = 'Accuracy:${accuracy < 0 ? "-%" : '${CoolUtil.quantize(accuracy * 100, 100)}%'} - ${curRating.rating}';
+			accuracyTxt.text = TEXT_GAME_ACCURACY.format([accuracy < 0 ? "-%" : '${CoolUtil.quantize(accuracy * 100, 100)}%', curRating.rating]);
 
 			for (i => frmtRange in accuracyTxt._formatRanges) if (frmtRange.format == accFormat) {
 				accuracyTxt._formatRanges[i].range.start = accuracyTxt.text.length - curRating.rating.length;
@@ -1319,6 +1324,15 @@ class PlayState extends MusicBeatState
 		if (canAccessDebugMenus && chartingMode && controls.DEV_ACCESS)
 			FlxG.switchState(new funkin.editors.charter.Charter(SONG.meta.name, difficulty, false));
 
+		if (Options.camZoomOnBeat && camZooming && FlxG.camera.zoom < maxCamZoom) {
+			var beat = Conductor.getBeats(camZoomingEvery, camZoomingInterval, camZoomingOffset);
+			if (camZoomingLastBeat != beat) {
+				camZoomingLastBeat = beat;
+				FlxG.camera.zoom += 0.015 * camZoomingStrength;
+				camHUD.zoom += 0.03 * camZoomingStrength;
+			}
+		}
+
 		if (doIconBop)
 			for (icon in iconArray)
 				if (icon.updateBump != null)
@@ -1333,22 +1347,19 @@ class PlayState extends MusicBeatState
 				if (Conductor.songPosition >= 0)
 					startSong();
 			}
-		} else if (FlxG.sound.music != null) {
-			var instTime = FlxG.sound.music.time;
-			var isOffsync:Bool = vocals.time != instTime;
-			if(!isOffsync) {
-				for(strumLine in strumLines.members) {
-					if(strumLine.vocals.time != instTime) {
-						isOffsync = true;
-						break;
-					}
+		}
+		else if (FlxG.sound.music != null && (__vocalSyncTimer -= elapsed) < 0) {
+			__vocalSyncTimer = 1;
+
+			var instTime = FlxG.sound.music.getActualTime();
+			var isOffsync:Bool = vocals.loaded && Math.abs(instTime - vocals.getActualTime()) > 30;
+			if (!isOffsync) {
+				for (strumLine in strumLines.members) {
+					if ((isOffsync = strumLine.vocals.loaded && Math.abs(instTime - strumLine.vocals.getActualTime()) > 30)) break;
 				}
 			}
-			__vocalOffsetViolation = Math.max(0, __vocalOffsetViolation + (isOffsync ? elapsed : -elapsed / 2));
-			if (__vocalOffsetViolation > Flags.VOCAL_OFFSET_VIOLATION_THRESHOLD) {
-				resyncVocals();
-				__vocalOffsetViolation = 0;
-			}
+
+			if (isOffsync) resyncVocals();
 		}
 
 		while(events.length > 0 && events.last().time <= Conductor.songPosition)
@@ -1540,6 +1551,12 @@ class PlayState extends MusicBeatState
 			case "Camera Modulo Change":
 				camZoomingInterval = event.params[0];
 				camZoomingStrength = event.params[1];
+				if (event.params[2] != null) camZoomingEvery = switch (event.params[2].toUpperCase()) {
+					case "STEP": STEP;
+					case "MEASURE": MEASURE;
+					default: BEAT;
+				}
+				if (event.params[3] != null) camZoomingOffset = event.params[3];
 			case "Camera Flash":
 				var camera:FlxCamera = event.params[3] == "camHUD" ? camHUD : camGame;
 
@@ -1989,13 +2006,6 @@ class PlayState extends MusicBeatState
 	{
 		super.beatHit(curBeat);
 
-		if (camZoomingInterval < 1) camZoomingInterval = 1;
-		if (Options.camZoomOnBeat && camZooming && FlxG.camera.zoom < maxCamZoom && curBeat % camZoomingInterval == 0)
-		{
-			FlxG.camera.zoom += Flags.CAM_BOP_STRENGTH * camZoomingStrength;
-			camHUD.zoom += Flags.HUD_BOP_STRENGTH * camZoomingStrength;
-		}
-
 		if (doIconBop)
 			for (icon in iconArray)
 				if (icon.bump != null)
@@ -2141,7 +2151,7 @@ final class ComboRating {
 	public function new(?percent:Float, ?rating:String, ?color:FlxColor, ?misses:Float) {
 		maxMisses = misses == null || Math.isNaN(misses) ? Math.POSITIVE_INFINITY : misses;
 		this.percent = percent;
-		this.rating = rating;
+		this.rating = TranslationUtil.get('game.rating.$rating', rating);
 		this.color = color;
 	}
 }

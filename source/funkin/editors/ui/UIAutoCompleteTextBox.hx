@@ -9,10 +9,10 @@ class UIAutoCompleteTextBox extends UITextBox {
 	public var suggestItems(default, set):Array<String> = [];
 	var suggestIndex = 0;
 
-	public function new(x:Float, y:Float, text:String = "", width:Int = 320, height:Int = 32, multiline:Bool = false) {
-		super(x, y, text, width, height, multiline);
+	public function new(x:Float, y:Float, text:String = "", width:Int = 320, height:Int = 32, multiline:Bool = false, small:Bool = false) {
+		super(x, y, text, width, height, multiline, small);
 
-		suggestionText = new UIText(0, 0, width, "");
+		suggestionText = new UIText(0, 0, width, "", small ? 12 : 15);
 		suggestionText.color = 0xFF888888;
 		suggestionText.visible = false;
 		members.insert(members.indexOf(label), suggestionText);
@@ -20,11 +20,7 @@ class UIAutoCompleteTextBox extends UITextBox {
 
 	public override function update(elapsed:Float) {
 		super.update(elapsed);
-
-		var selected = selectable && focused;
-
-		suggestionText.exists = selected;
-
+		suggestionText.exists = selectable && focused;
 		suggestionText.follow(label, 0, 0);
 	}
 

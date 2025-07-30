@@ -114,7 +114,7 @@ class AudioFixClient : public IMMNotificationClient {
 AudioFixClient *curAudioFix;
 ')
 @:dox(hide)
-class Windows {
+final class Windows {
 
 	public static var __audioChangeCallback:Void->Void = function() {
 		trace("test");

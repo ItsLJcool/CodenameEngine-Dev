@@ -118,7 +118,7 @@ class Framerate extends Sprite {
 		x = 10 + offset.x;
 		y = 2 + offset.y;
 
-		var width = Math.max(fpsCounter.width, #if SHOW_BUILD_ON_FPS Math.max(memoryCounter.width, codenameBuildField.width) #else memoryCounter.width #end) + (x*2);
+		var width = MathUtil.maxSmart(fpsCounter.width, memoryCounter.width #if SHOW_BUILD_ON_FPS , codenameBuildField.width #end) + (x*2);
 		var height = #if SHOW_BUILD_ON_FPS codenameBuildField.y + codenameBuildField.height #else memoryCounter.y + memoryCounter.height #end;
 		bgSprite.x = -x;
 		bgSprite.y = offset.x;

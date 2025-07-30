@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<libraries>
+<libraries checkVersion="update || all">
 	<if cond="update || all">
 		<print pretty="true">Preparing installation...</print>
 
@@ -16,6 +16,7 @@
 		<git name="hscript-improved" url="https://github.com/CodenameCrew/hscript-improved" ref="codename-dev" />
 		<git name="flxanimate" url="https://github.com/CodenameCrew/cne-flxanimate" />
 		<git name="hxdiscord_rpc" url="https://github.com/CodenameCrew/cne-hxdiscord_rpc" skipDeps="true" />
+		<git name="funkin-modchart" url="https://github.com/CodenameCrew/FunkinModchart" skipDeps="true" />
 		<lib name="hxvlc" version="1.9.3" skipDeps="true" />
 
 		<!-- Documentation and other features -->
@@ -24,6 +25,7 @@
 		<git name="grig.audio" url="https://gitlab.com/haxe-grig/grig.audio.git" ref="57f5d47f2533fd0c3dcd025a86cb86c0dfa0b6d2" />
 		<!-- <lib name="dox" /> -->
 		<lib name="markdown" />
+		<lib name="hxcpp-debug-server" />
 
 		<lib name="nape-haxe4" />
 

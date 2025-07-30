@@ -2,7 +2,7 @@ package funkin.backend.system;
 
 #if sys
 import sys.FileSystem;
-class CommandLineHandler {
+final class CommandLineHandler {
 	public static function parseCommandLine(cmd:Array<String>) {
 		var i:Int = 0;
 		while(i < cmd.length) {

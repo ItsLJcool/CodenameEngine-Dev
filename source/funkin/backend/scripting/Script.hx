@@ -98,6 +98,11 @@ class Script extends FlxBasic implements IFlxDestroyable {
 			"EngineUtil"		=> funkin.backend.utils.EngineUtil,
 			"MemoryUtil"		=> funkin.backend.utils.MemoryUtil,
 			"BitmapUtil"		=> funkin.backend.utils.BitmapUtil,
+
+			#if TRANSLATIONS_SUPPORT
+			"TranslationUtil"	=> funkin.backend.utils.TranslationUtil,
+			"translate"		=> funkin.backend.utils.TranslationUtil.get,
+			#end
 		];
 	}
 
@@ -107,9 +112,9 @@ class Script extends FlxBasic implements IFlxDestroyable {
 	 * if you wanna modify it, please edit `hscript.Interp.importRedirects` directly.
 	**/
 	public static function getDefaultImportRedirects():Map<String, String> {
-		var redirects:Map<String, String> = [
-		];
+		var redirects:Map<String, String> = [];
 
+		// Events
 		final events = "funkin.backend.scripting.events.";
 		redirects[events + "CharacterNodeEvent"]			= events + "character.CharacterNodeEvent";
 		redirects[events + "CharacterXMLEvent"]				= events + "character.CharacterXMLEvent";
@@ -140,6 +145,9 @@ class Script extends FlxBasic implements IFlxDestroyable {
 		redirects[events + "PlayAnimEvent"]					= events + "sprite.PlayAnimEvent";
 		redirects[events + "StageNodeEvent"]				= events + "stage.StageNodeEvent";
 		redirects[events + "StageXMLEvent"]					= events + "stage.StageXMLEvent";
+
+		// Old State Names
+		redirects["funkin.menus.BetaWarningState"] 			= "funkin.menus.WarningState";
 
 		return redirects;
 	}
@@ -208,7 +216,7 @@ class Script extends FlxBasic implements IFlxDestroyable {
 					var arr = Assets.getText(path).split("________PACKSEP________");
 					fromString(arr[1], arr[0]);
 				case "lua":
-					Logs.trace("Lua is not supported in this engine. Use HScript instead.", ERROR);
+					Logs.error("Lua is not supported in this engine. Use HScript instead.");
 					new DummyScript(path);
 				default:
 					new DummyScript(path);
@@ -227,7 +235,7 @@ class Script extends FlxBasic implements IFlxDestroyable {
 			case "hx" | "hscript" | "hsc" | "hxs":
 				new HScript(path).loadFromString(code);
 			case "lua":
-				Logs.trace("Lua is not supported in this engine. Use HScript instead.", ERROR);
+				Logs.error("Lua is not supported in this engine. Use HScript instead.");
 				new DummyScript(path).loadFromString(code);
 			default:
 				new DummyScript(path).loadFromString(code);
@@ -295,7 +303,7 @@ class Script extends FlxBasic implements IFlxDestroyable {
 		if(remappedNames.exists(fileName))
 			fileName = remappedNames.get(fileName);
 		Logs.traceColored([
-			Logs.logText('${fileName}: ', GREEN),
+			Logs.logText(fileName + ': ', GREEN),
 			Logs.logText(Std.string(v))
 		], TRACE);
 	}

@@ -12,6 +12,8 @@ class PortraitOption extends TextOption {
 
 	public function new(name:String, desc:String, callback:Void->Void, ?graphic:FlxGraphic, size:Int = 96, usePortrait:Bool = true) {
 		super(name, desc, callback);
+		__text.x = 100;
+
 		if (graphic != null) addPortrait(graphic, size, usePortrait);
 	}
 

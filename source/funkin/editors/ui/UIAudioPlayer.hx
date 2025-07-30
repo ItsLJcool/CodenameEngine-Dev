@@ -29,9 +29,9 @@ class UIAudioPlayer extends UIButton {
 	public function new(x:Float, y:Float, bytes:Bytes) {
 		sound = FlxG.sound.load(Sound.fromAudioBuffer(AudioBuffer.fromBytes(bytes)));
 
-		super(x, y, "", function () {
+		super(x, y, null, () -> {
 			if (sound.playing) sound.pause();
-			else sound.play(false, sound.time);
+			else sound.play(sound.time + 1 >= sound.length ? 0 : sound.time);
 		}, 58 - 16, 58 - 16);
 
 		playingSprite = new FlxSprite(x + ((58 - 16)/2) - 8, y + ((58 - 16)/2) - 8).loadGraphic(Paths.image('editors/ui/audio-buttons'), true, 16, 16);
@@ -58,7 +58,7 @@ class UIAudioPlayer extends UIButton {
 		members.push(timeBarPlayer);
 
 		timeBarSpr = cast new UISprite(timeBar.x, timeBar.y).makeSolid(timeBar.barWidth, timeBar.barHeight, 0x00FFFFFF);
-		timeBarSpr.cursor = BUTTON;
+		timeBarSpr.cursor = CLICK;
 		members.push(timeBarSpr);
 
 		volumeBar = new FlxBar(timeBar.x + timeBar.barWidth - 56, y + 6, LEFT_TO_RIGHT, 56, 10, sound, "volume", 0, 1);
@@ -68,7 +68,7 @@ class UIAudioPlayer extends UIButton {
 		members.push(volumeBar);
 
 		volumeBarSpr = cast new UISprite(volumeBar.x, volumeBar.y).makeSolid(volumeBar.barWidth, volumeBar.barHeight, 0x00FFFFFF);
-		volumeBarSpr.cursor = BUTTON;
+		volumeBarSpr.cursor = CLICK;
 		members.push(volumeBarSpr);
 
 		volumeIcon = new FlxSprite(volumeBar.x - 12 - 8, volumeBar.y-1).loadGraphic(Paths.image('editors/ui/audio-icon'));
@@ -107,20 +107,17 @@ class UIAudioPlayer extends UIButton {
 
 			var spritePos:FlxPoint = sprite.getScreenPosition(FlxPoint.get(), __lastDrawCameras[0]);
 
-			if (((mousePos.x > (spritePos.x)) && (mousePos.x < (spritePos.x) + timeBar.barWidth))
-				&& ((mousePos.y > (spritePos.y)) && (mousePos.y < (spritePos.y) + timeBar.barHeight))) {
-				if (FlxG.mouse.justPressed) {
-					draggingObj = sprite;
-					wasPlaying = draggingObj == timeBar ? sound.playing : false;
-				}
+			if (((mousePos.x > spritePos.x) && (mousePos.x < spritePos.x + sprite.barWidth))
+				&& ((mousePos.y > spritePos.y) && (mousePos.y < spritePos.y + sprite.barHeight))) {
 
+				if (FlxG.mouse.justPressed) {
+					if ((draggingObj = sprite) == timeBar && (wasPlaying = sound.playing)) sound.pause();
+				}
 				if (FlxG.mouse.pressed) {
-					if (draggingObj == timeBar) {
-						if (sound.playing) sound.pause();
+					if (draggingObj == timeBar)
 						sound.time = FlxMath.remapToRange(mousePos.x - spritePos.x, 0, timeBar.barWidth, 0, sound.length);
-					} else if (draggingObj == volumeBar) {
+					else if (draggingObj == volumeBar)
 						sound.volume = FlxMath.remapToRange(mousePos.x - spritePos.x, 0, volumeBar.barWidth, 0, 1);
-					}
 				}
 			}
 			spritePos.put();
@@ -128,8 +125,10 @@ class UIAudioPlayer extends UIButton {
 		mousePos.put();
 
 		if (FlxG.mouse.released) {
-			if (draggingObj == timeBar && wasPlaying)
-				sound.play(wasPlaying = false, sound.time);
+			if (draggingObj == timeBar && wasPlaying) {
+				sound.play();
+				wasPlaying = false;
+			}
 			draggingObj = null;
 		}
 	}

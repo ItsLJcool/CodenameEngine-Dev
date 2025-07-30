@@ -46,7 +46,7 @@ class UISlider extends UISprite {
 		makeGraphic(barWidth, 12, 0x00000000, true);
 		this.drawRoundRect(0, 0, barWidth, 12, 8, 6, 0xFFC0C0C0);
 		this.drawRoundRect(1, 1, barWidth-2, 12-2, 8, 5, 0xFF140013);
-		cursor = BUTTON;
+		cursor = CLICK;
 
 		progressbar = new UISprite(centered ? barWidth/2 : 0);
 		progressbar.makeGraphic(barWidth, 8, 0x00000000, true);
@@ -64,7 +64,7 @@ class UISlider extends UISprite {
 			var selectableBar:UISprite = new UISprite(x,y);
 			selectableBar.loadGraphic(Paths.image("editors/ui/slider"));
 			selectableBar.antialiasing = true;
-			selectableBar.cursor = BUTTON;
+			selectableBar.cursor = CLICK;
 			members.push(selectableBar);
 
 			switch (i) {
@@ -75,12 +75,12 @@ class UISlider extends UISprite {
 
 		selectableHitbox = new UISprite(x,y);
 		selectableHitbox.makeSolid(barWidth, 18, -1);
-		selectableHitbox.cursor = BUTTON;
+		selectableHitbox.cursor = CLICK;
 		selectableHitbox.alpha = 0;
 		members.push(selectableHitbox);
 
 		valueStepper = new UINumericStepper(x - 64 - 64, y, 1, 0.01, 2, segments[0].start, segments[segments.length-1].end, 0, 16);
-		valueStepper.antialiasing = valueStepper.label.antialiasing = true;
+		valueStepper.antialiasing = true;
 		valueStepper.onChange = function (text:String) {
 			@:privateAccess valueStepper.__onChange(text);
 			this.value = valueStepper.value;
@@ -103,12 +103,14 @@ class UISlider extends UISprite {
 		valueStepper.bWidth = Std.int(FlxMath.lerp(valueStepper.bWidth, __stepperWidth, 1/2.25));
 		valueStepper.follow(this, -startText.width-10 - valueStepper.bWidth - 4, (height-valueStepper.bHeight)/2);
 
+		//@:privateAccess valueStepper.__framesDirty = true;
+
 		var lastBarProgress:Float = __barProgress;
 
 		if (selectableHitbox.hovered && FlxG.mouse.justPressed) isSliding = true;
 		if (isSliding) {
 			var mousePos = FlxG.mouse.getScreenPosition(__lastDrawCameras[0], FlxPoint.get());
-			__barProgress = FlxMath.bound(mousePos.x-x, 0, barWidth)/barWidth;
+			__barProgress = CoolUtil.bound(mousePos.x-x, 0, barWidth)/barWidth;
 			mousePos.put();
 			if (FlxG.mouse.justReleased) isSliding = false;
 		}
@@ -120,7 +122,7 @@ class UISlider extends UISprite {
 
 		visualProgress = FlxMath.lerp(visualProgress, __barProgress, 1/2.25);
 		progressbar.follow(this, progressCentered ? barWidth/2 : 0, (height-progressbar.height)/2);
-		progressbar.scale.x = FlxMath.bound(visualProgress-(progressCentered?0.5:0),-1,1);
+		progressbar.scale.x = CoolUtil.bound(visualProgress-(progressCentered?0.5:0),-1,1);
 		progressbar.colorTransform.color = FlxColor.interpolate(progressbar.colorTransform.color, selectableHitbox.hovered ? 0xFF7F00BF : 0xFF67009B, 1/14);
 
 		selectableBar.follow(this, (visualProgress * barWidth) - (selectableBar.width/2), (height-selectableBar.height)/2); selectableBarHighlight.follow(selectableBar);

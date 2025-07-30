@@ -29,6 +29,7 @@ class MainMenuState extends MusicBeatState
 
 	override function create()
 	{
+
 		super.create();
 
 		DiscordUtil.call("onMenuLoaded", ["Main Menu"]);
@@ -73,7 +74,12 @@ class MainMenuState extends MusicBeatState
 
 		FlxG.camera.follow(camFollow, null, 0.06);
 
-		versionText = new FunkinText(5, FlxG.height - 2, 0, '${Flags.VERSION_MESSAGE}\n${Flags.COMMIT_MESSAGE}\n[${controls.getKeyName(SWITCHMOD)}] Open Mods menu\n');
+		versionText = new FunkinText(5, FlxG.height - 2, 0, [
+			Flags.VERSION_MESSAGE,
+			TU.translate("mainMenu.commit", [Flags.COMMIT_NUMBER, Flags.COMMIT_HASH]),
+			TU.translate("mainMenu.openMods", [controls.getKeyName(SWITCHMOD)]),
+			''
+		].join('\n'));
 		versionText.y -= versionText.height;
 		versionText.scrollFactor.set();
 		add(versionText);
